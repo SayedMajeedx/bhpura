@@ -8,13 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Trash2, Printer, Save, Send, Search, Star } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Printer, Save, Send, Search, Star, Receipt, Link as LinkIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
 import { regionLabel, formatAddressLine, formatAddressDetailed, type StructuredAddress } from "@/lib/bahrain-regions";
+import { printThermalReceipt } from "@/lib/thermal-print";
 
 function formatDeliveryAddress(
   c: { region?: string | null; road?: string | null; house?: string | null; flat?: string | null; address?: string | null; city?: string | null } | null | undefined,
@@ -247,6 +248,86 @@ function OrderDetail() {
   };
 
 
+  const copyLink = async () => {
+    const url = `${window.location.origin}/invoice/${order.id}`;
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = url;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      toast.success(t("orders.linkCopied"));
+    } catch {
+      toast.error(t("orders.linkFailed"));
+    }
+  };
+
+  const printReceipt = () => {
+    const settings = settingsQ.data ?? {};
+    const LEGACY = new Set(["Abaya Atelier", "أباية أتيليه"]);
+    const rawBrand = (settings.business_name ?? "").trim();
+    const brand = !rawBrand || LEGACY.has(rawBrand)
+      ? (lang === "ar" ? "بيورا" : "Pura")
+      : rawBrand;
+
+    const paymentLabel = order.payment_method ? t(`payment.${order.payment_method}`) : "";
+    const statusLabel = t(`status.${order.status}`);
+
+    const ok = printThermalReceipt({
+      brand,
+      invoiceNumber: order.invoice_number,
+      orderDate: order.order_date,
+      status: statusLabel,
+      customerName: order.customers?.name ?? null,
+      customerPhone: order.customers?.phone ?? null,
+      paymentMethod: paymentLabel || null,
+      items: items.map((i) => ({
+        description: i.description,
+        quantity: i.quantity,
+        unit_price: i.unit_price,
+        customization_total: i.customization_total,
+        line_total: i.line_total,
+        customizations: i.customizations,
+      })),
+      subtotal: totals.subtotal,
+      discount: totals.discount,
+      taxRate: Number(order.tax_rate ?? 0),
+      taxAmount: totals.taxAmount,
+      shipping: totals.shipping,
+      total: totals.total,
+      currency,
+      lang,
+      labels: {
+        receipt: t("orders.printReceipt"),
+        invoiceNumber: t("orders.invoice") + " #",
+        date: t("orders.date"),
+        status: t("orders.status"),
+        payment: t("orderDetail.paymentMethod"),
+        customer: t("orderDetail.customer"),
+        item: t("orderDetail.description"),
+        qty: t("orderDetail.qty"),
+        price: t("orderDetail.unitPrice"),
+        total: t("orderDetail.total"),
+        subtotal: t("orderDetail.subtotal"),
+        discount: t("orderDetail.discount"),
+        vat: t("orderDetail.vat"),
+        shipping: t("orderDetail.shipping"),
+        grandTotal: t("orderDetail.grandTotal"),
+        thankYou: settings.footer_note?.trim()
+          || (lang === "ar" ? "شكراً لتسوّقكم معنا" : "Thank you for your order"),
+      },
+      footerNote: null,
+    });
+    if (!ok) toast.error(t("orders.popupBlocked"));
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
       <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -255,7 +336,9 @@ function OrderDetail() {
         </Link>
         <div className="flex flex-wrap gap-2">
           <SendInvoiceDialog order={order} totals={totals} settings={settingsQ.data} currency={currency} />
-          <Button variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4 mr-2" /> {t("common.print")}</Button>
+          <Button variant="outline" onClick={copyLink}><LinkIcon className="h-4 w-4 mr-2" /> {t("orders.copyLink")}</Button>
+          <Button variant="outline" onClick={printReceipt}><Receipt className="h-4 w-4 mr-2" /> {t("orders.printReceipt")}</Button>
+          <Button variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4 mr-2" /> {t("orders.printA4")}</Button>
           <Button onClick={save}><Save className="h-4 w-4 mr-2" /> {t("common.save")}</Button>
         </div>
       </div>
