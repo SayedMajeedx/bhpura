@@ -874,21 +874,8 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
         {settings.font_url && !isRTL && (
           <style>{`@font-face { font-family: 'InvoiceCustomFont'; src: url('${settings.font_url}'); font-display: swap; }`}</style>
         )}
-        <style>{`
-          @media print {
-            @page { margin: 12mm; }
-            body { background: #fff !important; }
-            .printable-invoice { direction: ${isRTL ? "rtl" : "ltr"} !important; unicode-bidi: isolate; box-shadow: none !important; border: 0 !important; background: #fff !important; }
-            .printable-invoice * { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
-            /* Force legible black text for all invoice content on paper */
-            .printable-invoice, .printable-invoice p, .printable-invoice span,
-            .printable-invoice td, .printable-invoice th, .printable-invoice li,
-            .printable-invoice h1, .printable-invoice h2, .printable-invoice h3,
-            .printable-invoice strong, .printable-invoice em { color: #000 !important; }
-            /* Table header keeps its accent background but text stays white */
-            .printable-invoice thead th { color: #ffffff !important; }
-          }
-        `}</style>
+        {/* Browser print overrides removed — PDF is generated via html2pdf directly from the live DOM,
+            preserving the exact colors and typography configured by the user. */}
         <div className="p-4 sm:p-8 md:p-10 print:p-10" style={{ borderTop: `6px solid ${color}` }}>
           {/*
             Layout rule:
