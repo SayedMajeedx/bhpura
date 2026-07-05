@@ -7,7 +7,7 @@ import { Link as LinkIcon, Plus, ReceiptText, Trash2 } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
-import { derivePaymentStatus, PAYMENT_BADGE_CLASSES } from "@/lib/payment-status";
+import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES } from "@/lib/payment-status";
 
 export const Route = createFileRoute("/_authenticated/orders/")({
   component: OrdersList,
@@ -118,7 +118,7 @@ function OrdersList() {
                     <div className="inline-flex items-center gap-2">
                       <span>{formatMoney(Number(o.total), o.currency)}</span>
                       {(() => {
-                        const badge = derivePaymentStatus(o.status, Number(o.total), Number((o as any).advance_paid ?? 0));
+                        const badge = resolvePaymentStatus((o as any).payment_status, o.status, Number(o.total), Number((o as any).advance_paid ?? 0));
                         return (
                           <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${PAYMENT_BADGE_CLASSES[badge]}`}>
                             {t(`payStatus.${badge}`)}
