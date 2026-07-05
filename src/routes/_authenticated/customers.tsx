@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,10 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, Star, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
-import { BAHRAIN_REGIONS, regionLabel } from "@/lib/bahrain-regions";
+import { BAHRAIN_REGIONS, regionLabel, formatAddressLine, type StructuredAddress } from "@/lib/bahrain-regions";
 
 export const Route = createFileRoute("/_authenticated/customers")({
   component: CustomersPage,
@@ -32,6 +32,17 @@ type Customer = {
   flat: string | null;
 };
 
+type Address = {
+  id: string;
+  customer_id: string;
+  label: string | null;
+  region: string | null;
+  road: string | null;
+  house: string | null;
+  flat: string | null;
+  is_default: boolean;
+};
+
 function CustomersPage() {
   const t = useT();
   const { lang } = useI18n();
@@ -46,6 +57,19 @@ function CustomersPage() {
       if (error) throw error;
       return data as Customer[];
     },
+  });
+
+  const addressesQ = useQuery({
+    queryKey: ["customer_addresses"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("customer_addresses").select("*");
+      if (error) throw error;
+      return data as Address[];
+    },
+  });
+  const defaultByCustomer = new Map<string, Address>();
+  (addressesQ.data ?? []).forEach((a) => {
+    if (a.is_default) defaultByCustomer.set(a.customer_id, a);
   });
 
   const del = async (id: string) => {
@@ -97,7 +121,13 @@ function CustomersPage() {
                     {c.phone && <div>{c.phone}</div>}
                     {c.email && <div>{c.email}</div>}
                   </td>
-                  <td className="p-4 text-muted-foreground">{regionLabel(c.region, lang) || c.city || "—"}</td>
+                  <td className="p-4 text-muted-foreground">
+                    {(() => {
+                      const def = defaultByCustomer.get(c.id);
+                      if (def) return formatAddressLine(def, lang) || regionLabel(def.region, lang) || "—";
+                      return regionLabel(c.region, lang) || c.city || "—";
+                    })()}
+                  </td>
                   <td className="p-4 text-right">
                     <Button variant="ghost" size="icon" onClick={() => { setEditing(c); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => del(c.id)}><Trash2 className="h-4 w-4" /></Button>
