@@ -420,25 +420,25 @@ function OrderDetail() {
         <Card className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <Label>Notes</Label>
+              <Label>{t("orderDetail.notes")}</Label>
               <Textarea value={order.notes ?? ""} onChange={(e) => setOrder({ ...order, notes: e.target.value })} rows={5} />
             </div>
             <div className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div><Label>Discount</Label>
+                <div><Label>{t("orderDetail.discount")}</Label>
                   <Input type="number" step="0.01" value={order.discount} onChange={(e) => setOrder({ ...order, discount: Number(e.target.value) })} /></div>
-                <div><Label>Shipping</Label>
+                <div><Label>{t("orderDetail.shipping")}</Label>
                   <Input type="number" step="0.01" value={order.shipping} onChange={(e) => setOrder({ ...order, shipping: Number(e.target.value) })} /></div>
               </div>
-              <div><Label>Tax rate (%)</Label>
+              <div><Label>{t("orderDetail.taxRate")}</Label>
                 <Input type="number" step="0.01" value={order.tax_rate} onChange={(e) => setOrder({ ...order, tax_rate: Number(e.target.value) })} /></div>
               <div className="border-t border-border pt-3 space-y-1 text-sm">
-                <Row label="Subtotal" value={formatMoney(totals.subtotal, currency)} />
-                <Row label={`Discount`} value={`− ${formatMoney(totals.discount, currency)}`} />
-                <Row label={`VAT (${order.tax_rate}%)`} value={formatMoney(totals.taxAmount, currency)} />
-                <Row label="Shipping" value={formatMoney(totals.shipping, currency)} />
+                <Row label={t("orderDetail.subtotal")} value={formatMoney(totals.subtotal, currency)} />
+                <Row label={t("orderDetail.discount")} value={`− ${formatMoney(totals.discount, currency)}`} />
+                <Row label={`${t("orderDetail.vat")} (${order.tax_rate}%)`} value={formatMoney(totals.taxAmount, currency)} />
+                <Row label={t("orderDetail.shipping")} value={formatMoney(totals.shipping, currency)} />
                 <div className="flex justify-between pt-2 border-t border-border">
-                  <span className="font-display text-lg">Total</span>
+                  <span className="font-display text-lg">{t("orderDetail.total")}</span>
                   <span className="font-display text-lg">{formatMoney(totals.total, currency)}</span>
                 </div>
               </div>
