@@ -1002,8 +1002,8 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
             </table>
           </div>
 
-          {/* Totals: align to the language's END side (right in LTR, left in RTL) */}
-          <div className="flex" style={{ justifyContent: isRTL ? "flex-start" : "flex-end" }}>
+          {/* Totals: EN → left side, AR → right side (both use flex-start against the doc direction). */}
+          <div className="flex" style={{ justifyContent: "flex-start" }}>
             <div className="w-72 text-sm space-y-1">
               <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.subtotal}</span><span>{money(order.subtotal)}</span></div>
               {Number(order.discount) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.discount}</span><span>− {money(order.discount)}</span></div>}
