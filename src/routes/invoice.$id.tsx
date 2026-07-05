@@ -156,25 +156,27 @@ function PublicInvoice() {
           }}
         >
           <div className="p-5 sm:p-10">
-            {/* EN: brand right + details left; AR: brand left + details right (flex-row-reverse in both) */}
-            <div className="flex flex-col sm:flex-row-reverse justify-between items-start gap-4 mb-8">
-              <div className="min-w-0" style={{ textAlign: "end" }}>
+            {/* Brand block always on the doc-start side (LTR=left, RTL=right);
+                invoice metadata always on the doc-end side. Using natural
+                flex-row + text-align:start/end lets the browser mirror the
+                whole row automatically based on `dir`. */}
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
+              <div className="min-w-0" style={{ textAlign: "start" }}>
                 {settings?.logo_url && (
                   <img
                     src={settings.logo_url}
                     alt="logo"
                     className="h-14 object-contain mb-2"
-                    style={{ marginInlineStart: "auto" }}
+                    style={{ marginInlineEnd: "auto" }}
                   />
                 )}
-                <h2 style={{ color }} className="text-2xl font-semibold">{brand}</h2>
                 {displayBusinessAddress && <p className="text-sm whitespace-pre-line mt-1" style={{ opacity: 0.75 }}>{displayBusinessAddress}</p>}
                 <p className="text-xs mt-1" style={{ opacity: 0.65 }}>
                   {[settings?.phone, settings?.email].filter(Boolean).join(" · ")}
                   {settings?.vat_number && ` · ${L.vatId} ${settings.vat_number}`}
                 </p>
               </div>
-              <div style={{ textAlign: "start" }}>
+              <div style={{ textAlign: "end" }}>
                 <h1 style={{ color }} className="text-3xl sm:text-4xl font-semibold tracking-tight">{L.invoice}</h1>
                 <p className="text-base mt-1">{L.number}: {order.invoice_number}</p>
                 <p className="text-xs mt-2" style={{ opacity: 0.7 }}>{L.date}: {new Date(order.order_date).toLocaleDateString(locale)}</p>
