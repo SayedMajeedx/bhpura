@@ -560,7 +560,7 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
             <div className="mt-10 pt-6 border-t border-neutral-200 text-sm text-neutral-600 space-y-2">
               {order.notes && <p><strong className="text-neutral-800">{L.notes}: </strong>{order.notes}</p>}
               {settings.footer_note && <p className="italic">{settings.footer_note}</p>}
-              <p className="italic">{L.warmRegards},<br/>{settings.business_name}</p>
+              <p className="italic">{L.warmRegards},<br/>{brandFor(invoiceLang, settings.business_name)}</p>
             </div>
           )}
         </div>
