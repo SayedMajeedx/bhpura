@@ -459,7 +459,7 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
                     draggable={false}
                     style={{
                       position: "absolute",
-                      left: logoX,
+                      insetInlineStart: logoX,
                       top: logoY,
                       width: logoW,
                       height: logoH,
@@ -475,7 +475,7 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
                 {settings.vat_number && ` · ${L.vatLabel} ${num(settings.vat_number)}`}
               </p>
             </div>
-            <div className={isRTL ? "text-left" : "text-right"}>
+            <div className="text-end">
               <h1 className="text-4xl font-display tracking-tight" style={{ color }}>{L.invoice}</h1>
               <p className="text-lg mt-1">{L.invoiceNumber}: {num(order.invoice_number)}</p>
               <p className="text-xs text-neutral-500 mt-2">{L.date}: {new Date(order.order_date).toLocaleDateString(isRTL ? "ar-BH" : undefined)}</p>
@@ -487,7 +487,7 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
           </div>
 
           {order.customers && (
-            <div className="mb-8">
+            <div className="mb-8 text-start">
               <p className="text-xs uppercase tracking-wider text-neutral-500 mb-1">{L.billTo}</p>
               <p className="font-medium">{order.customers.name}</p>
               {order.customers.address && <p className="text-sm text-neutral-600 whitespace-pre-line">{order.customers.address}</p>}
@@ -500,16 +500,16 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
           <table className="w-full text-sm mb-6">
             <thead>
               <tr style={{ backgroundColor: color, color: "white" }}>
-                <th className={`${isRTL ? "text-right" : "text-left"} p-3`}>{L.description}</th>
-                <th className={`${isRTL ? "text-left" : "text-right"} p-3 w-16`}>{L.qty}</th>
-                <th className={`${isRTL ? "text-left" : "text-right"} p-3 w-28`}>{L.unit}</th>
-                <th className={`${isRTL ? "text-left" : "text-right"} p-3 w-28`}>{L.total}</th>
+                <th className="text-start p-3">{L.description}</th>
+                <th className="text-end p-3 w-16">{L.qty}</th>
+                <th className="text-end p-3 w-28">{L.unit}</th>
+                <th className="text-end p-3 w-28">{L.total}</th>
               </tr>
             </thead>
             <tbody>
               {items.map((it, i) => (
                 <tr key={i} className="border-b border-neutral-200 align-top">
-                  <td className="p-3">
+                  <td className="p-3 text-start">
                     <p className="font-medium">{it.description || "—"}</p>
                     {it.customizations.length > 0 && (
                       <ul className="mt-1 text-xs text-neutral-600 space-y-0.5">
@@ -519,15 +519,15 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
                       </ul>
                     )}
                   </td>
-                  <td className={`p-3 ${isRTL ? "text-left" : "text-right"}`}>{num(it.quantity)}</td>
-                  <td className={`p-3 ${isRTL ? "text-left" : "text-right"}`}>{money(it.unit_price + it.customization_total)}</td>
-                  <td className={`p-3 font-medium ${isRTL ? "text-left" : "text-right"}`}>{money(it.line_total)}</td>
+                  <td className="p-3 text-end">{num(it.quantity)}</td>
+                  <td className="p-3 text-end">{money(it.unit_price + it.customization_total)}</td>
+                  <td className="p-3 font-medium text-end">{money(it.line_total)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          <div className={`flex ${isRTL ? "justify-start" : "justify-end"}`}>
+          <div className="flex justify-end">
             <div className="w-72 text-sm space-y-1">
               <div className="flex justify-between"><span className="text-neutral-600">{L.subtotal}</span><span>{money(order.subtotal)}</span></div>
               {Number(order.discount) > 0 && <div className="flex justify-between"><span className="text-neutral-600">{L.discount}</span><span>− {money(order.discount)}</span></div>}
@@ -539,6 +539,7 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
               </div>
             </div>
           </div>
+
 
           {(order.notes || settings.footer_note) && (
             <div className="mt-10 pt-6 border-t border-neutral-200 text-sm text-neutral-600 space-y-2">
