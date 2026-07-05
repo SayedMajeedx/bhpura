@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Languages } from "lucide-react";
+import { applyRememberMe } from "@/lib/session-persistence";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -21,6 +23,7 @@ function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
@@ -33,10 +36,12 @@ function AuthPage() {
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
+        applyRememberMe(remember);
         toast.success(t("auth.accountCreated"));
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        applyRememberMe(remember);
       }
       navigate({ to: "/dashboard" });
     } catch (err: any) {
@@ -79,6 +84,23 @@ function AuthPage() {
               <Label htmlFor="password">{t("auth.password")}</Label>
               <Input id="password" type="password" required minLength={8}
                 value={password} onChange={(e) => setPassword(e.target.value)} />
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer select-none">
+                <Checkbox
+                  checked={remember}
+                  onCheckedChange={(v) => setRemember(v === true)}
+                />
+                <span>{t("auth.rememberMe")}</span>
+              </label>
+              {mode === "signin" && (
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-primary hover:underline"
+                >
+                  {t("auth.forgotPassword")}
+                </Link>
+              )}
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? t("common.pleaseWait") : mode === "signin" ? t("auth.signIn") : t("auth.signUp")}
