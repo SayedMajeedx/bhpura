@@ -108,7 +108,7 @@ function ProductsSection({ products, variants, onChanged }: { products: Product[
       <div className="flex justify-end">
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEditing(null)}><Plus className="h-4 w-4 mr-2" /> {t("inventory.newProduct")}</Button>
+            <Button onClick={() => setEditing(null)}><Plus className="h-4 w-4 me-2" /> {t("inventory.newProduct")}</Button>
           </DialogTrigger>
           <ProductDialog product={editing} onSaved={() => { setOpen(false); setEditing(null); onChanged(); }} />
         </Dialog>
@@ -135,7 +135,9 @@ function ProductsSection({ products, variants, onChanged }: { products: Product[
                       <h3 className="text-lg font-display">{p.name}</h3>
                       {p.category && <p className="text-xs text-muted-foreground">{p.category}</p>}
                       {p.description && <p className="text-sm text-muted-foreground mt-1">{p.description}</p>}
-                      <p className="text-xs text-muted-foreground mt-2">{pVariants.length} variant{pVariants.length !== 1 ? "s" : ""} · {stockTotal} in stock</p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {pVariants.length} {t("inventory.variantsCount")} · {stockTotal} {t("inventory.inStock")}
+                      </p>
                     </div>
                   </div>
                   <div className="flex gap-1">
@@ -194,6 +196,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
 }
 
 function VariantList({ productId, variants, onChanged }: { productId: string; variants: Variant[]; onChanged: () => void }) {
+  const t = useT();
   const [adding, setAdding] = useState(false);
   const empty = { size: "", color: "", fabric: "", sku: "", cost_price: "0", selling_price: "0", stock: "0" };
   const [row, setRow] = useState(empty);
@@ -215,7 +218,7 @@ function VariantList({ productId, variants, onChanged }: { productId: string; va
     if (error) toast.error(error.message); else onChanged();
   };
   const del = async (id: string) => {
-    if (!confirm("Delete variant?")) return;
+    if (!confirm(t("inventory.deleteVariantConfirm"))) return;
     const { error } = await supabase.from("product_variants").delete().eq("id", id);
     if (error) toast.error(error.message); else onChanged();
   };
@@ -225,10 +228,16 @@ function VariantList({ productId, variants, onChanged }: { productId: string; va
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground">
-              <th className="py-2 pr-3">Size</th><th className="py-2 pr-3">Color</th><th className="py-2 pr-3">Fabric</th>
-              <th className="py-2 pr-3">SKU</th><th className="py-2 pr-3">Cost</th><th className="py-2 pr-3">Price</th>
-              <th className="py-2 pr-3">Margin</th><th className="py-2 pr-3">Stock</th><th></th>
+            <tr className="text-start text-xs uppercase tracking-wider text-muted-foreground">
+              <th className="py-2 pe-3 text-start">{t("inventory.size")}</th>
+              <th className="py-2 pe-3 text-start">{t("inventory.color")}</th>
+              <th className="py-2 pe-3 text-start">{t("inventory.fabric")}</th>
+              <th className="py-2 pe-3 text-start">{t("inventory.sku")}</th>
+              <th className="py-2 pe-3 text-start">{t("inventory.cost")}</th>
+              <th className="py-2 pe-3 text-start">{t("inventory.price")}</th>
+              <th className="py-2 pe-3 text-start">{t("inventory.margin")}</th>
+              <th className="py-2 pe-3 text-start">{t("inventory.stock")}</th>
+              <th className="w-8"></th>
             </tr>
           </thead>
           <tbody>
@@ -236,29 +245,29 @@ function VariantList({ productId, variants, onChanged }: { productId: string; va
               const margin = v.selling_price > 0 ? ((v.selling_price - v.cost_price) / v.selling_price) * 100 : 0;
               return (
                 <tr key={v.id} className="border-t border-border">
-                  <td className="py-2 pr-3"><input className="bg-transparent w-16 outline-none" defaultValue={v.size ?? ""} onBlur={(e) => update(v, { size: e.target.value || null })} /></td>
-                  <td className="py-2 pr-3"><input className="bg-transparent w-20 outline-none" defaultValue={v.color ?? ""} onBlur={(e) => update(v, { color: e.target.value || null })} /></td>
-                  <td className="py-2 pr-3"><input className="bg-transparent w-20 outline-none" defaultValue={v.fabric ?? ""} onBlur={(e) => update(v, { fabric: e.target.value || null })} /></td>
-                  <td className="py-2 pr-3"><input className="bg-transparent w-20 outline-none" defaultValue={v.sku ?? ""} onBlur={(e) => update(v, { sku: e.target.value || null })} /></td>
-                  <td className="py-2 pr-3"><input type="number" step="0.01" className="bg-transparent w-20 outline-none" defaultValue={v.cost_price} onBlur={(e) => update(v, { cost_price: Number(e.target.value) })} /></td>
-                  <td className="py-2 pr-3"><input type="number" step="0.01" className="bg-transparent w-24 outline-none" defaultValue={v.selling_price} onBlur={(e) => update(v, { selling_price: Number(e.target.value) })} /></td>
-                  <td className="py-2 pr-3 text-primary flex items-center gap-1"><TrendingUp className="h-3 w-3" />{margin.toFixed(0)}%</td>
-                  <td className="py-2 pr-3"><input type="number" className="bg-transparent w-16 outline-none" defaultValue={v.stock} onBlur={(e) => update(v, { stock: Number(e.target.value) })} /></td>
-                  <td><Button variant="ghost" size="icon" onClick={() => del(v.id)}><Trash2 className="h-3 w-3" /></Button></td>
+                  <td className="py-2 pe-3 text-start"><input className="bg-transparent w-16 outline-none text-start" defaultValue={v.size ?? ""} onBlur={(e) => update(v, { size: e.target.value || null })} /></td>
+                  <td className="py-2 pe-3 text-start"><input className="bg-transparent w-20 outline-none text-start" defaultValue={v.color ?? ""} onBlur={(e) => update(v, { color: e.target.value || null })} /></td>
+                  <td className="py-2 pe-3 text-start"><input className="bg-transparent w-20 outline-none text-start" defaultValue={v.fabric ?? ""} onBlur={(e) => update(v, { fabric: e.target.value || null })} /></td>
+                  <td className="py-2 pe-3 text-start"><input className="bg-transparent w-24 outline-none text-start" defaultValue={v.sku ?? ""} onBlur={(e) => update(v, { sku: e.target.value || null })} /></td>
+                  <td className="py-2 pe-3 text-start"><input type="number" step="0.01" className="bg-transparent w-20 outline-none text-start" defaultValue={v.cost_price} onBlur={(e) => update(v, { cost_price: Number(e.target.value) })} /></td>
+                  <td className="py-2 pe-3 text-start"><input type="number" step="0.01" className="bg-transparent w-24 outline-none text-start" defaultValue={v.selling_price} onBlur={(e) => update(v, { selling_price: Number(e.target.value) })} /></td>
+                  <td className="py-2 pe-3 text-primary"><span className="inline-flex items-center gap-1"><TrendingUp className="h-3 w-3" />{margin.toFixed(0)}%</span></td>
+                  <td className="py-2 pe-3 text-start"><input type="number" className="bg-transparent w-16 outline-none text-start" defaultValue={v.stock} onBlur={(e) => update(v, { stock: Number(e.target.value) })} /></td>
+                  <td className="text-end"><Button variant="ghost" size="icon" onClick={() => del(v.id)}><Trash2 className="h-3 w-3" /></Button></td>
                 </tr>
               );
             })}
             {adding && (
               <tr className="border-t border-border bg-secondary/40">
-                <td className="py-2 pr-3"><Input className="h-8 w-16" value={row.size} onChange={(e) => setRow({ ...row, size: e.target.value })} /></td>
-                <td className="py-2 pr-3"><Input className="h-8 w-20" value={row.color} onChange={(e) => setRow({ ...row, color: e.target.value })} /></td>
-                <td className="py-2 pr-3"><Input className="h-8 w-20" value={row.fabric} onChange={(e) => setRow({ ...row, fabric: e.target.value })} /></td>
-                <td className="py-2 pr-3"><Input className="h-8 w-20" value={row.sku} onChange={(e) => setRow({ ...row, sku: e.target.value })} /></td>
-                <td className="py-2 pr-3"><Input className="h-8 w-20" type="number" step="0.01" value={row.cost_price} onChange={(e) => setRow({ ...row, cost_price: e.target.value })} /></td>
-                <td className="py-2 pr-3"><Input className="h-8 w-24" type="number" step="0.01" value={row.selling_price} onChange={(e) => setRow({ ...row, selling_price: e.target.value })} /></td>
+                <td className="py-2 pe-3"><Input className="h-8 w-16 text-start" value={row.size} onChange={(e) => setRow({ ...row, size: e.target.value })} /></td>
+                <td className="py-2 pe-3"><Input className="h-8 w-20 text-start" value={row.color} onChange={(e) => setRow({ ...row, color: e.target.value })} /></td>
+                <td className="py-2 pe-3"><Input className="h-8 w-20 text-start" value={row.fabric} onChange={(e) => setRow({ ...row, fabric: e.target.value })} /></td>
+                <td className="py-2 pe-3"><Input className="h-8 w-24 text-start" value={row.sku} onChange={(e) => setRow({ ...row, sku: e.target.value })} /></td>
+                <td className="py-2 pe-3"><Input className="h-8 w-20 text-start" type="number" step="0.01" value={row.cost_price} onChange={(e) => setRow({ ...row, cost_price: e.target.value })} /></td>
+                <td className="py-2 pe-3"><Input className="h-8 w-24 text-start" type="number" step="0.01" value={row.selling_price} onChange={(e) => setRow({ ...row, selling_price: e.target.value })} /></td>
                 <td></td>
-                <td className="py-2 pr-3"><Input className="h-8 w-16" type="number" value={row.stock} onChange={(e) => setRow({ ...row, stock: e.target.value })} /></td>
-                <td className="flex gap-1"><Button size="sm" onClick={add}>Save</Button><Button size="sm" variant="ghost" onClick={() => setAdding(false)}>×</Button></td>
+                <td className="py-2 pe-3"><Input className="h-8 w-16 text-start" type="number" value={row.stock} onChange={(e) => setRow({ ...row, stock: e.target.value })} /></td>
+                <td className="py-2"><div className="flex gap-1 justify-end"><Button size="sm" onClick={add}>{t("common.save")}</Button><Button size="sm" variant="ghost" onClick={() => setAdding(false)}>×</Button></div></td>
               </tr>
             )}
           </tbody>
@@ -266,7 +275,7 @@ function VariantList({ productId, variants, onChanged }: { productId: string; va
       </div>
       {!adding && (
         <Button variant="ghost" size="sm" className="mt-2" onClick={() => setAdding(true)}>
-          <Plus className="h-3 w-3 mr-1" /> Add variant
+          <Plus className="h-3 w-3 me-1" /> {t("inventory.addVariant")}
         </Button>
       )}
     </div>
