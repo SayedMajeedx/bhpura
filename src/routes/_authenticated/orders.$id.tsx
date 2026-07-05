@@ -579,6 +579,22 @@ function OrderDetail() {
                   onChange={(e) => setOrder({ ...order, advance_paid: Number(e.target.value) })}
                 />
               </div>
+              <div>
+                <Label>{t("orderDetail.paymentStatus")}</Label>
+                <Select
+                  value={order.payment_status ?? "unpaid"}
+                  onValueChange={(v) => setOrder({ ...order, payment_status: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAYMENT_BADGE_VALUES.map((v) => (
+                      <SelectItem key={v} value={v}>{t(`payStatus.${v}`)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="border-t border-border pt-3 space-y-1 text-sm">
                 <Row label={t("orderDetail.subtotal")} value={formatMoney(totals.subtotal, currency)} />
                 <Row label={t("orderDetail.discount")} value={`− ${formatMoney(totals.discount, currency)}`} />
