@@ -325,6 +325,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          advance_paid: number
           created_at: string
           currency: string
           customer_id: string | null
@@ -346,6 +347,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          advance_paid?: number
           created_at?: string
           currency?: string
           customer_id?: string | null
@@ -367,6 +369,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          advance_paid?: number
           created_at?: string
           currency?: string
           customer_id?: string | null
