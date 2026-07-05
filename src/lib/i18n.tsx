@@ -395,6 +395,25 @@ const ar: Dict = {
   "status.shipped": "تم الشحن",
   "status.completed": "مكتمل",
   "status.cancelled": "ملغى",
+
+  "orderDetail.customer": "العميلة",
+  "orderDetail.noCustomerOption": "— بدون عميلة —",
+  "orderDetail.status": "الحالة",
+  "orderDetail.paymentMethod": "طريقة الدفع",
+  "orderDetail.selectPayment": "— اختاري طريقة الدفع —",
+  "orderDetail.vat": "ضريبة القيمة المضافة",
+  "orderDetail.grandTotal": "الإجمالي الكلي",
+  "orderDetail.addonsHint": "أضيفي الخيارات من المخزون ← إضافات التخصيص.",
+  "orderDetail.insufficientStock": "المخزون غير كافٍ لأحد البنود. عدّلي الكميات أو أعيدي التخزين قبل التأكيد.",
+  "orderDetail.stockUpdated": "تم تحديث المخزون",
+
+  "payment.cash": "نقدًا",
+  "payment.card": "بطاقة",
+  "payment.bank_transfer": "تحويل بنكي",
+  "payment.benefit": "بنفت",
+  "payment.apple_pay": "أبل باي",
+  "payment.google_pay": "جوجل باي",
+  "payment.cod": "الدفع عند الاستلام",
 };
 
 const dicts: Record<Lang, Dict> = { en, ar };
