@@ -347,6 +347,13 @@ const INVOICE_LABELS = {
     language: "اللغة", english: "English", arabic: "العربية",
   },
 } as const;
+const BRAND: Record<"en" | "ar", string> = { en: "Pura", ar: "بيورا" };
+const LEGACY_BRAND_NAMES = new Set(["Abaya Atelier", "أباية أتيليه"]);
+function brandFor(lang: "en" | "ar", stored?: string | null) {
+  const s = (stored ?? "").trim();
+  if (!s || LEGACY_BRAND_NAMES.has(s)) return BRAND[lang];
+  return s;
+}
 
 const STATUS_LABELS: Record<string, { en: string; ar: string }> = {
   draft: { en: "Draft", ar: "مسودة" },
@@ -476,7 +483,7 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
                   />
                 </div>
               )}
-              <h2 style={{ color, fontSize: `${fontSize * 1.75}px`, fontWeight: 600 }}>{settings.business_name}</h2>
+              <h2 style={{ color, fontSize: `${fontSize * 1.75}px`, fontWeight: 600 }}>{brandFor(invoiceLang, settings.business_name)}</h2>
               {settings.address && <p className="text-sm text-neutral-600 whitespace-pre-line mt-1">{settings.address}</p>}
               <p className="text-xs text-neutral-500 mt-1">
                 {[settings.phone, settings.email].filter(Boolean).join(" · ")}
@@ -553,7 +560,7 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
             <div className="mt-10 pt-6 border-t border-neutral-200 text-sm text-neutral-600 space-y-2">
               {order.notes && <p><strong className="text-neutral-800">{L.notes}: </strong>{order.notes}</p>}
               {settings.footer_note && <p className="italic">{settings.footer_note}</p>}
-              <p className="italic">{L.warmRegards},<br/>{settings.business_name}</p>
+              <p className="italic">{L.warmRegards},<br/>{brandFor(invoiceLang, settings.business_name)}</p>
             </div>
           )}
         </div>
@@ -592,7 +599,7 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
     customer_name: order?.customers?.name ?? "there",
     customer_email: order?.customers?.email ?? "",
     customer_phone: order?.customers?.phone ?? "",
-    business_name: settings?.business_name ?? "",
+    business_name: brandFor("en", settings?.business_name),
     invoice_number: String(order?.invoice_number ?? ""),
     date: new Date(order?.order_date).toLocaleDateString(),
     total: formatMoney(totals.total, currency),

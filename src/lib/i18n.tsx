@@ -5,7 +5,7 @@ export type Lang = "en" | "ar";
 type Dict = Record<string, string>;
 
 const en: Dict = {
-  "app.title": "Abaya Atelier",
+  "app.title": "Pura",
   "app.subtitle": "Boutique management",
   "app.portalSubtitle": "Boutique management portal",
 
@@ -152,7 +152,7 @@ const en: Dict = {
 };
 
 const ar: Dict = {
-  "app.title": "أباية أتيليه",
+  "app.title": "بيورا",
   "app.subtitle": "إدارة البوتيك",
   "app.portalSubtitle": "بوابة إدارة البوتيك",
 
