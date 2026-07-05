@@ -1,0 +1,5 @@
+ALTER TABLE public.business_settings
+  ADD COLUMN IF NOT EXISTS logo_x numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS logo_y numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS logo_width numeric NOT NULL DEFAULT 160,
+  ADD COLUMN IF NOT EXISTS logo_height numeric NOT NULL DEFAULT 64;

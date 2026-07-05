@@ -27,8 +27,12 @@ export type Database = {
           font_size: number
           font_url: string | null
           footer_note: string | null
+          logo_height: number
           logo_size: number
           logo_url: string | null
+          logo_width: number
+          logo_x: number
+          logo_y: number
           next_invoice_number: number
           phone: string | null
           primary_color: string
@@ -49,8 +53,12 @@ export type Database = {
           font_size?: number
           font_url?: string | null
           footer_note?: string | null
+          logo_height?: number
           logo_size?: number
           logo_url?: string | null
+          logo_width?: number
+          logo_x?: number
+          logo_y?: number
           next_invoice_number?: number
           phone?: string | null
           primary_color?: string
@@ -71,8 +79,12 @@ export type Database = {
           font_size?: number
           font_url?: string | null
           footer_note?: string | null
+          logo_height?: number
           logo_size?: number
           logo_url?: string | null
+          logo_width?: number
+          logo_x?: number
+          logo_y?: number
           next_invoice_number?: number
           phone?: string | null
           primary_color?: string
