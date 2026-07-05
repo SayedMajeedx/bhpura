@@ -150,7 +150,7 @@ function PublicInvoice() {
           <div className="p-5 sm:p-10">
             {/* EN: brand right + details left; AR: brand left + details right (flex-row-reverse in both) */}
             <div className="flex flex-col sm:flex-row-reverse justify-between items-start gap-4 mb-8">
-              <div className="min-w-0" style={{ textAlign: isRTL ? "start" : "end" }}>
+              <div className="min-w-0" style={{ textAlign: "end" }}>
                 {settings?.logo_url && (
                   <img
                     src={settings.logo_url}
