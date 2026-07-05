@@ -14,7 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useT } from "@/lib/i18n";
-import { Rnd } from "react-rnd";
+
 
 export const Route = createFileRoute("/_authenticated/orders/$id")({
   component: OrderDetail,
