@@ -830,11 +830,11 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline"><Send className="h-4 w-4 mr-2" /> Send invoice</Button>
+          <Button variant="outline"><Send className="h-4 w-4 mr-2" /> {t("orderDetail.sendInvoice")}</Button>
         </DialogTrigger>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Send invoice</DialogTitle>
+            <DialogTitle>{t("orderDetail.sendInvoice")}</DialogTitle>
             <DialogDescription>Pick a template, tweak the message, then send via email or WhatsApp.</DialogDescription>
           </DialogHeader>
 
