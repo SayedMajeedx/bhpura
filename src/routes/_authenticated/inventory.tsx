@@ -226,7 +226,7 @@ function VariantList({ productId, variants, onChanged }: { productId: string; va
   return (
     <div className="mt-4 border-t border-border pt-4">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="text-start text-xs uppercase tracking-wider text-muted-foreground">
               <th className="py-2 pe-3 text-start">{t("inventory.size")}</th>
