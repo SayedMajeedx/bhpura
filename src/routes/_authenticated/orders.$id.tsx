@@ -403,31 +403,21 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
               {settings.logo_url && (
                 <div
                   className="relative mb-3"
-                  style={{ height: Math.max(logoBox.height + logoBox.y, defaultLogoSize) + 20 }}
+                  style={{ height: logoH + logoY + 8 }}
                 >
-                  <Rnd
-                    size={{ width: logoBox.width, height: logoBox.height }}
-                    position={{ x: logoBox.x, y: logoBox.y }}
-                    onDragStop={(_e: any, d: any) => setLogoBox((b) => ({ ...b, x: d.x, y: d.y }))}
-                    onResizeStop={(_e: any, _dir: any, ref: any, _delta: any, pos: any) =>
-                      setLogoBox({
-                        width: parseInt(ref.style.width, 10),
-                        height: parseInt(ref.style.height, 10),
-                        x: pos.x,
-                        y: pos.y,
-                      })
-                    }
-                    bounds="parent"
-                    lockAspectRatio
-                    className="border border-dashed border-transparent hover:border-neutral-300 print:!border-transparent"
-                  >
-                    <img
-                      src={settings.logo_url}
-                      alt="logo"
-                      draggable={false}
-                      style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none" }}
-                    />
-                  </Rnd>
+                  <img
+                    src={settings.logo_url}
+                    alt="logo"
+                    draggable={false}
+                    style={{
+                      position: "absolute",
+                      left: logoX,
+                      top: logoY,
+                      width: logoW,
+                      height: logoH,
+                      objectFit: "contain",
+                    }}
+                  />
                 </div>
               )}
               <h2 style={{ color, fontSize: `${fontSize * 1.75}px`, fontWeight: 600 }}>{settings.business_name}</h2>
