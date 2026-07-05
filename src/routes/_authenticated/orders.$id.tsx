@@ -873,7 +873,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
       <div
         dir={isRTL ? "rtl" : "ltr"}
         lang={invoiceLang}
-        className="printable-invoice rounded-lg shadow-lg border border-border overflow-hidden"
+        className="printable-invoice pdf-invoice-root rounded-lg shadow-lg border border-border overflow-hidden"
         style={{ backgroundColor: bg, color: text, fontFamily: family, fontSize: `${fontSize}px`, printColorAdjust: "exact", WebkitPrintColorAdjust: "exact" } as any}
       >
         {settings.font_url && !isRTL && (
@@ -881,27 +881,28 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
         )}
         {/* Browser print overrides removed — PDF is generated via html2pdf directly from the live DOM,
             preserving the exact colors and typography configured by the user. */}
-        <div className="p-4 sm:p-8 md:p-10 print:p-10" style={{ borderTop: `6px solid ${color}` }}>
+        <div className="pdf-invoice-body p-4 sm:p-8 md:p-10 print:p-10" style={{ borderTop: `6px solid ${color}` }}>
           {/*
             Layout rule:
-            - EN (LTR): brand block on the RIGHT, invoice meta on the LEFT
-            - AR (RTL): brand block on the LEFT, invoice meta on the RIGHT
-            Achieved with flex-row-reverse in both modes (LTR flex-row-reverse puts first child right; RTL flex-row-reverse puts first child left).
+            - EN (LTR): brand block on the LEFT, invoice meta on the RIGHT
+            - AR (RTL): brand block on the RIGHT, invoice meta on the LEFT
+            Natural flex-row mirrors correctly from the document direction.
           */}
-          <div className="flex flex-col md:flex-row-reverse justify-between items-start mb-8 md:mb-10 gap-4 md:gap-6 print:flex-row-reverse">
-            <div className="flex-1 min-w-0" style={{ textAlign: "end" }}>
+          <div className="pdf-invoice-header flex flex-row justify-between items-start mb-8 md:mb-10 gap-4 md:gap-6 print:flex-row">
+            <div className="pdf-brand-block w-[48%] min-w-0" style={{ textAlign: "start" }}>
               {settings.logo_url && (
                 <div
-                  className="relative mb-3 flex"
-                  style={{ height: logoH + logoY + 8, justifyContent: "flex-end" }}
+                  className="pdf-brand-logo-wrap relative mb-3 flex"
+                  style={{ height: logoH + logoY + 8, justifyContent: "flex-start" }}
                 >
                   <img
                     src={settings.logo_url}
                     alt="logo"
+                    className="pdf-brand-logo"
                     draggable={false}
                     style={{
                       position: "absolute",
-                      insetInlineEnd: logoX,
+                      insetInlineStart: logoX,
                       top: logoY,
                       width: logoW,
                       height: logoH,
@@ -910,14 +911,13 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                   />
                 </div>
               )}
-              <h2 style={{ color, fontSize: `${fontSize * 1.75}px`, fontWeight: 600 }}>{brandFor(invoiceLang, settings.business_name)}</h2>
               {settings.address && <p className="text-sm whitespace-pre-line mt-1" style={{ opacity: 0.75 }}>{isRTL ? settings.address : (settings.address as string).replace(/مجمع/g, "Block").replace(/طريق/g, "Road").replace(/منزل/g, "House").replace(/شقة/g, "Flat").replace(/شارع/g, "Street")}</p>}
               <p className="text-xs mt-1" style={{ opacity: 0.65 }}>
                 {[settings.phone, settings.email].filter(Boolean).join(" · ")}
                 {settings.vat_number && ` · ${L.vatLabel} ${num(settings.vat_number)}`}
               </p>
             </div>
-            <div className="w-full md:w-auto" style={{ textAlign: "start" }}>
+            <div className="pdf-meta-block w-[48%] min-w-0" style={{ textAlign: "end" }}>
               <h1 className="text-3xl sm:text-4xl font-display tracking-tight" style={{ color }}>{L.invoice}</h1>
               <p className="text-lg mt-1">{L.invoiceNumber}: {num(order.invoice_number)}</p>
               <p className="text-xs mt-2" style={{ opacity: 0.7 }}>{L.date}: {new Date(order.order_date).toLocaleDateString(isRTL ? "ar-BH" : undefined)}</p>
@@ -962,8 +962,8 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
             </div>
           )}
 
-          <div className="-mx-4 sm:mx-0 overflow-x-auto print:overflow-visible print:mx-0">
-            <table className="w-full min-w-[520px] text-sm mb-6">
+          <div className="pdf-table-wrap -mx-4 sm:mx-0 overflow-x-auto print:overflow-visible print:mx-0">
+            <table className="pdf-line-items w-full min-w-[520px] text-sm mb-6">
               <thead>
                 <tr style={{ backgroundColor: color, color: "#ffffff" }}>
                   <th className="text-start p-3">{L.description}</th>
@@ -1007,9 +1007,9 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
             </table>
           </div>
 
-          {/* Totals: EN → left side, AR → right side (both use flex-start against the doc direction). */}
-          <div className="flex" style={{ justifyContent: "flex-start" }}>
-            <div className="w-72 text-sm space-y-1">
+          {/* Totals stay on the physical left side in both languages. */}
+          <div className="pdf-totals-row flex" style={{ justifyContent: "flex-start", direction: "ltr" }}>
+            <div className="pdf-totals-block w-72 text-sm space-y-1" style={{ direction: isRTL ? "rtl" : "ltr" }}>
               <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.subtotal}</span><span>{money(order.subtotal)}</span></div>
               {Number(order.discount) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.discount}</span><span>− {money(order.discount)}</span></div>}
               {Number(order.tax_rate) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.vat} ({num(order.tax_rate)}%)</span><span>{money(order.tax_amount)}</span></div>}
