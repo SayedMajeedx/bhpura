@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+import { regionLabel } from "@/lib/bahrain-regions";
 
 
 export const Route = createFileRoute("/_authenticated/orders/$id")({
@@ -505,8 +506,19 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
             <div className="mb-8 text-start">
               <p className="text-xs uppercase tracking-wider text-neutral-500 mb-1">{L.billTo}</p>
               <p className="font-medium">{order.customers.name}</p>
-              {order.customers.address && <p className="text-sm text-neutral-600 whitespace-pre-line">{order.customers.address}</p>}
-              {order.customers.city && <p className="text-sm text-neutral-600">{order.customers.city}</p>}
+              {(() => {
+                const c = order.customers;
+                const parts = [c.road, c.house, c.flat].filter((v: string | null) => v && String(v).trim());
+                const line1 = parts.join(" · ");
+                const region = regionLabel(c.region, invoiceLang) || c.city || "";
+                return (
+                  <>
+                    {line1 && <p className="text-sm text-neutral-600">{isRTL ? toArabicDigits(line1) : line1}</p>}
+                    {!line1 && c.address && <p className="text-sm text-neutral-600 whitespace-pre-line">{c.address}</p>}
+                    {region && <p className="text-sm text-neutral-600">{region}</p>}
+                  </>
+                );
+              })()}
               {order.customers.phone && <p className="text-sm text-neutral-600">{num(order.customers.phone)}</p>}
               {order.customers.email && <p className="text-sm text-neutral-600">{order.customers.email}</p>}
             </div>
