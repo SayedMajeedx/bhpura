@@ -329,20 +329,61 @@ function Row({ label, value }: { label: string; value: string }) {
 
 const INVOICE_LABELS = {
   en: {
-    invoice: "INVOICE", date: "Date", status: "Status", billTo: "Bill to",
+    invoice: "INVOICE", invoiceNumber: "Invoice #",
+    date: "Date", status: "Status", billTo: "Bill to",
+    paymentMethod: "Payment method", vatLabel: "VAT",
     item: "Item", description: "Description", qty: "Qty", unit: "Unit Price", price: "Price", total: "Total",
-    subtotal: "Subtotal", discount: "Discount", vat: "VAT", shipping: "Shipping",
+    subtotal: "Subtotal", discount: "Discount", vat: "VAT", shipping: "Shipping", grandTotal: "Grand Total",
     notes: "Notes", warmRegards: "Warm regards",
     language: "Language", english: "English", arabic: "العربية",
   },
   ar: {
-    invoice: "فاتورة", date: "التاريخ", status: "الحالة", billTo: "فاتورة إلى",
+    invoice: "فاتورة", invoiceNumber: "رقم الفاتورة",
+    date: "التاريخ", status: "الحالة", billTo: "فاتورة إلى",
+    paymentMethod: "طريقة الدفع", vatLabel: "الرقم الضريبي",
     item: "الصنف", description: "الوصف", qty: "الكمية", unit: "سعر الوحدة", price: "السعر", total: "الإجمالي",
-    subtotal: "المجموع الفرعي", discount: "الخصم", vat: "ضريبة القيمة المضافة", shipping: "الشحن",
+    subtotal: "المجموع الفرعي", discount: "الخصم", vat: "ضريبة القيمة المضافة", shipping: "الشحن", grandTotal: "الإجمالي الكلي",
     notes: "ملاحظات", warmRegards: "مع أطيب التحيات",
     language: "اللغة", english: "English", arabic: "العربية",
   },
 } as const;
+
+const STATUS_LABELS: Record<string, { en: string; ar: string }> = {
+  draft: { en: "Draft", ar: "مسودة" },
+  confirmed: { en: "Confirmed", ar: "مؤكدة" },
+  paid: { en: "Paid", ar: "مدفوعة" },
+  pending: { en: "Pending", ar: "قيد الانتظار" },
+  shipped: { en: "Shipped", ar: "تم الشحن" },
+  completed: { en: "Completed", ar: "مكتملة" },
+  cancelled: { en: "Cancelled", ar: "ملغاة" },
+  refunded: { en: "Refunded", ar: "مستردة" },
+};
+
+const PAYMENT_LABELS: Record<string, { en: string; ar: string }> = {
+  cash: { en: "Cash", ar: "نقدًا" },
+  card: { en: "Card", ar: "بطاقة" },
+  bank_transfer: { en: "Bank transfer", ar: "تحويل بنكي" },
+  transfer: { en: "Bank transfer", ar: "تحويل بنكي" },
+  benefit: { en: "Benefit", ar: "بنفت" },
+  apple_pay: { en: "Apple Pay", ar: "أبل باي" },
+  google_pay: { en: "Google Pay", ar: "جوجل باي" },
+  cod: { en: "Cash on delivery", ar: "الدفع عند الاستلام" },
+};
+
+function tStatus(s: string | null | undefined, lang: "en" | "ar") {
+  if (!s) return "";
+  return STATUS_LABELS[s]?.[lang] ?? s;
+}
+function tPayment(s: string | null | undefined, lang: "en" | "ar") {
+  if (!s) return "";
+  return PAYMENT_LABELS[s]?.[lang] ?? s;
+}
+
+// Localize numerals (Arabic-Indic) inside a rendered money/number string
+function toArabicDigits(str: string) {
+  const map = ["٠","١","٢","٣","٤","٥","٦","٧","٨","٩"];
+  return str.replace(/[0-9]/g, (d) => map[+d]);
+}
 
 function InvoicePreview({ order, items, settings }: { order: any; items: Item[]; settings: any }) {
   const currency = order.currency;
