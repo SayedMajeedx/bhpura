@@ -453,7 +453,7 @@ const ar: Dict = {
   "orders.linkCopied": "تم نسخ الرابط بنجاح!",
   "orders.linkFailed": "تعذّر نسخ الرابط — حاول مرة أخرى.",
   "orders.printReceipt": "طباعة الإيصال",
-  "orders.printA4": "طباعة الفاتورة (A4)",
+  "orders.printA4": "تحميل الفاتورة PDF",
   "orders.actions": "إجراءات",
   "orders.popupBlocked": "تم حظر النافذة المنبثقة — يرجى السماح بالنوافذ لطباعة الإيصال.",
 
