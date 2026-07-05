@@ -173,13 +173,41 @@ function OrderDetail() {
     updateItem(idx, { customizations: newCust });
   };
 
+  const DEDUCTING = new Set(["confirmed", "paid", "shipped", "completed"]);
+
   const save = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    // Stock precheck when order will be in a deducting state.
+    if (DEDUCTING.has(order.status)) {
+      const variants = variantsQ.data ?? [];
+      const wasDeducted = !!(orderQ.data as any)?.stock_deducted;
+      const priorItems = wasDeducted ? ((orderQ.data as any)?.order_items ?? []) : [];
+      const prevByVariant = new Map<string, number>();
+      for (const p of priorItems as any[]) {
+        if (!p.variant_id) continue;
+        prevByVariant.set(p.variant_id, (prevByVariant.get(p.variant_id) ?? 0) + Number(p.quantity));
+      }
+      const wantByVariant = new Map<string, number>();
+      for (const it of items) {
+        if (!it.variant_id) continue;
+        wantByVariant.set(it.variant_id, (wantByVariant.get(it.variant_id) ?? 0) + Number(it.quantity));
+      }
+      for (const [vid, want] of wantByVariant) {
+        const v = variants.find((x: any) => x.id === vid);
+        if (!v) continue;
+        const available = Number(v.stock) + (prevByVariant.get(vid) ?? 0);
+        if (want > available) {
+          return toast.error(t("orderDetail.insufficientStock"));
+        }
+      }
+    }
+
     const { error: oe } = await supabase.from("orders").update({
       customer_id: order.customer_id, status: order.status, notes: order.notes,
       shipping_address_id: order.shipping_address_id ?? null,
+      payment_method: order.payment_method ?? null,
       discount: totals.discount, tax_rate: order.tax_rate, tax_amount: totals.taxAmount,
       shipping: totals.shipping, subtotal: totals.subtotal, total: totals.total,
       currency, order_date: order.order_date,
@@ -198,10 +226,26 @@ function OrderDetail() {
       );
       if (ie) return toast.error(ie.message);
     }
+
+    // Sync inventory (deduct or restore based on status).
+    const { error: se } = await supabase.rpc("sync_order_stock", { p_order_id: order.id });
+    if (se) {
+      if (se.message?.includes("INSUFFICIENT_STOCK")) {
+        toast.error(t("orderDetail.insufficientStock"));
+      } else {
+        toast.error(se.message);
+      }
+      // Continue to invalidate — items may already be saved. User can adjust.
+    } else if (DEDUCTING.has(order.status) || (orderQ.data as any)?.stock_deducted) {
+      toast.success(t("orderDetail.stockUpdated"));
+    }
+
     toast.success("Saved");
     qc.invalidateQueries({ queryKey: ["order", id] });
     qc.invalidateQueries({ queryKey: ["orders"] });
+    qc.invalidateQueries({ queryKey: ["variants"] });
   };
+
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
