@@ -347,6 +347,13 @@ const INVOICE_LABELS = {
     language: "اللغة", english: "English", arabic: "العربية",
   },
 } as const;
+const BRAND: Record<"en" | "ar", string> = { en: "Pura", ar: "بيورا" };
+const LEGACY_BRAND_NAMES = new Set(["Abaya Atelier", "أباية أتيليه"]);
+function brandFor(lang: "en" | "ar", stored?: string | null) {
+  const s = (stored ?? "").trim();
+  if (!s || LEGACY_BRAND_NAMES.has(s)) return BRAND[lang];
+  return s;
+}
 
 const STATUS_LABELS: Record<string, { en: string; ar: string }> = {
   draft: { en: "Draft", ar: "مسودة" },
