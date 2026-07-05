@@ -7,6 +7,7 @@ import { Link as LinkIcon, Plus, ReceiptText, Trash2 } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
+import { derivePaymentStatus, PAYMENT_BADGE_CLASSES } from "@/lib/payment-status";
 
 export const Route = createFileRoute("/_authenticated/orders/")({
   component: OrdersList,
@@ -113,7 +114,19 @@ function OrdersList() {
                   <td className="p-4 text-muted-foreground">{new Date(o.order_date).toLocaleDateString()}</td>
                   <td className="p-4">{o.customers?.name ?? <span className="text-muted-foreground italic">{t("orders.noCustomer")}</span>}</td>
                   <td className="p-4"><span className="text-xs uppercase tracking-wider px-2 py-1 rounded bg-secondary">{t(`status.${o.status}`)}</span></td>
-                  <td className="p-4 text-right font-medium whitespace-nowrap">{formatMoney(Number(o.total), o.currency)}</td>
+                  <td className="p-4 text-right font-medium whitespace-nowrap">
+                    <div className="inline-flex items-center gap-2">
+                      <span>{formatMoney(Number(o.total), o.currency)}</span>
+                      {(() => {
+                        const badge = derivePaymentStatus(o.status, Number(o.total), Number((o as any).advance_paid ?? 0));
+                        return (
+                          <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${PAYMENT_BADGE_CLASSES[badge]}`}>
+                            {t(`payStatus.${badge}`)}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  </td>
                   <td className="p-4 text-right whitespace-nowrap">
                     <Button
                       variant="ghost"
