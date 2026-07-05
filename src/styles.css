@@ -123,6 +123,16 @@ html.lang-ar .font-display {
   letter-spacing: 0;
 }
 
+/* Hide default browser spinner arrows on number inputs */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
 @media print {
   @page { margin: 16mm; }
   body { background: white !important; }

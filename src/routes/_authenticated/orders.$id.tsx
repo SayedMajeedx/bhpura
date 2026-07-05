@@ -601,7 +601,7 @@ function OrderDetail() {
                     <Input value={it.description} onChange={(e) => updateItem(idx, { description: e.target.value })} />
                   </div>
                   <div className="sm:col-span-1"><Label>{t("orderDetail.qty")}</Label>
-                    <Input type="number" min={1} value={it.quantity} onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })} /></div>
+                    <Input type="number" min={1} className="min-w-[70px] text-center" value={it.quantity} onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })} /></div>
                   <div className="sm:col-span-2"><Label>{t("orderDetail.unitPrice")}</Label>
                     <Input type="number" step="0.01" value={it.unit_price} onChange={(e) => updateItem(idx, { unit_price: Number(e.target.value) })} /></div>
                 </div>
