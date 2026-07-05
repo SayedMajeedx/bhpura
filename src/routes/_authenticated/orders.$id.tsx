@@ -173,8 +173,15 @@ function OrderDetail() {
     const v = variantsQ.data?.find((x: any) => x.id === variantId);
     const p = productsQ.data?.find((x: any) => x.id === v?.product_id);
     if (!v || !p) return;
-    const desc = `${p.name}${v.size ? ` · ${v.size}` : ""}${v.color ? ` · ${v.color}` : ""}${v.fabric ? ` · ${v.fabric}` : ""}`;
-    updateItem(idx, { product_id: p.id, variant_id: v.id, description: desc, unit_price: Number(v.selling_price) });
+    const isAr = lang === "ar";
+    const sizeLabel = isAr ? "المقاس" : "Size";
+    const colorLabel = isAr ? "اللون" : "Color";
+    const fabricLabel = isAr ? "القماش" : "Fabric";
+    const lines = [p.name];
+    if (v.size) lines.push(`${sizeLabel}: ${v.size}`);
+    if (v.color) lines.push(`${colorLabel}: ${v.color}`);
+    if (v.fabric) lines.push(`${fabricLabel}: ${v.fabric}`);
+    updateItem(idx, { product_id: p.id, variant_id: v.id, description: lines.join("\n"), unit_price: Number(v.selling_price) });
   };
 
   const toggleCustom = (idx: number, c: { name: string; price_delta: number }) => {
@@ -598,7 +605,7 @@ function OrderDetail() {
                   </div>
                   <div className="sm:col-span-3">
                     <Label>{t("orderDetail.description")}</Label>
-                    <Input value={it.description} onChange={(e) => updateItem(idx, { description: e.target.value })} />
+                    <Textarea rows={3} value={it.description} onChange={(e) => updateItem(idx, { description: e.target.value })} className="text-sm leading-snug" />
                   </div>
                   <div className="sm:col-span-2"><Label>{t("orderDetail.qty")}</Label>
                     <Input type="number" min={1} className="min-w-[70px] text-center" value={it.quantity} onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })} /></div>
@@ -973,7 +980,20 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                 {items.map((it, i) => (
                   <tr key={i} className="border-b border-neutral-200 align-top">
                     <td className="p-3 text-start">
-                      <p className="font-medium">{it.description || "—"}</p>
+                      {(() => {
+                        const raw = (it.description || "—").split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+                        const [head, ...rest] = raw.length ? raw : ["—"];
+                        return (
+                          <>
+                            <p className="font-medium">{head}</p>
+                            {rest.length > 0 && (
+                              <div className="text-xs mt-0.5 leading-snug" style={{ opacity: 0.7 }}>
+                                {rest.map((line, li) => (<div key={li}>{line}</div>))}
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                       {it.customizations.length > 0 && (
                         <ul className="mt-1 text-xs space-y-0.5" style={{ opacity: 0.75 }}>
                           {it.customizations.map((c, ci) => (
