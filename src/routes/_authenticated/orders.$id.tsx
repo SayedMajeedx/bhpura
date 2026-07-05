@@ -605,7 +605,7 @@ function OrderDetail() {
                   </div>
                   <div className="sm:col-span-3">
                     <Label>{t("orderDetail.description")}</Label>
-                    <Input value={it.description} onChange={(e) => updateItem(idx, { description: e.target.value })} />
+                    <Textarea rows={3} value={it.description} onChange={(e) => updateItem(idx, { description: e.target.value })} className="text-sm leading-snug" />
                   </div>
                   <div className="sm:col-span-2"><Label>{t("orderDetail.qty")}</Label>
                     <Input type="number" min={1} className="min-w-[70px] text-center" value={it.quantity} onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })} /></div>
