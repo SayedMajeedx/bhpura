@@ -99,6 +99,7 @@ function OrdersList() {
               ))}
             </tbody>
           </table>
+          </div>
         </Card>
       )}
     </div>
