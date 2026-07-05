@@ -42,7 +42,7 @@ const en: Dict = {
   "auth.failed": "Authentication failed",
 
   "dashboard.title": "Dashboard",
-  "dashboard.subtitle": "A quiet overview of your atelier.",
+  "dashboard.subtitle": "",
   "dashboard.revenue": "Revenue",
   "dashboard.orders": "Orders",
   "dashboard.customers": "Customers",
@@ -204,7 +204,7 @@ const ar: Dict = {
   "auth.failed": "فشل تسجيل الدخول",
 
   "dashboard.title": "لوحة التحكم",
-  "dashboard.subtitle": "نظرة هادئة على أتيليهك.",
+  "dashboard.subtitle": "",
   "dashboard.revenue": "الإيرادات",
   "dashboard.orders": "الطلبات",
   "dashboard.customers": "العملاء",
