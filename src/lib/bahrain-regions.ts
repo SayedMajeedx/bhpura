@@ -39,3 +39,24 @@ export function regionLabel(value: string | null | undefined, lang: "en" | "ar")
   if (found) return lang === "ar" ? found.ar : found.en;
   return value;
 }
+
+export type StructuredAddress = {
+  id?: string;
+  label?: string | null;
+  region?: string | null;
+  road?: string | null;
+  house?: string | null;
+  flat?: string | null;
+  is_default?: boolean;
+};
+
+export function formatAddressLine(a: StructuredAddress | null | undefined, lang: "en" | "ar"): string {
+  if (!a) return "";
+  const region = regionLabel(a.region, lang);
+  const road = a.road?.trim() || "";
+  const house = a.house?.trim() || "";
+  const flat = a.flat?.trim() || "";
+  const parts = lang === "ar" ? [region, road, house, flat] : [flat, house, road, region];
+  const sep = lang === "ar" ? "، " : ", ";
+  return parts.filter((p) => p && p.length > 0).join(sep);
+}
