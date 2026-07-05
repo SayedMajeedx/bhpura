@@ -12,6 +12,7 @@ import { Plus, Pencil, Trash2, Package, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+import { ActivityLogList } from "@/components/activity-log-list";
 
 export const Route = createFileRoute("/_authenticated/inventory")({
   component: Inventory,
@@ -88,6 +89,10 @@ function Inventory() {
           onChanged={() => qc.invalidateQueries({ queryKey: ["customizations"] })}
         />
       )}
+
+      <div className="mt-8">
+        <ActivityLogList scope="inventory" />
+      </div>
     </div>
   );
 }
