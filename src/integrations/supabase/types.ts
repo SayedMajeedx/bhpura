@@ -333,9 +333,11 @@ export type Database = {
           invoice_number: number
           notes: string | null
           order_date: string
+          payment_method: string | null
           shipping: number
           shipping_address_id: string | null
           status: string
+          stock_deducted: boolean
           subtotal: number
           tax_amount: number
           tax_rate: number
@@ -352,9 +354,11 @@ export type Database = {
           invoice_number: number
           notes?: string | null
           order_date?: string
+          payment_method?: string | null
           shipping?: number
           shipping_address_id?: string | null
           status?: string
+          stock_deducted?: boolean
           subtotal?: number
           tax_amount?: number
           tax_rate?: number
@@ -371,9 +375,11 @@ export type Database = {
           invoice_number?: number
           notes?: string | null
           order_date?: string
+          payment_method?: string | null
           shipping?: number
           shipping_address_id?: string | null
           status?: string
+          stock_deducted?: boolean
           subtotal?: number
           tax_amount?: number
           tax_rate?: number
@@ -489,7 +495,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      sync_order_stock: { Args: { p_order_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
