@@ -173,8 +173,15 @@ function OrderDetail() {
     const v = variantsQ.data?.find((x: any) => x.id === variantId);
     const p = productsQ.data?.find((x: any) => x.id === v?.product_id);
     if (!v || !p) return;
-    const desc = `${p.name}${v.size ? ` · ${v.size}` : ""}${v.color ? ` · ${v.color}` : ""}${v.fabric ? ` · ${v.fabric}` : ""}`;
-    updateItem(idx, { product_id: p.id, variant_id: v.id, description: desc, unit_price: Number(v.selling_price) });
+    const isAr = lang === "ar";
+    const sizeLabel = isAr ? "المقاس" : "Size";
+    const colorLabel = isAr ? "اللون" : "Color";
+    const fabricLabel = isAr ? "القماش" : "Fabric";
+    const lines = [p.name];
+    if (v.size) lines.push(`${sizeLabel}: ${v.size}`);
+    if (v.color) lines.push(`${colorLabel}: ${v.color}`);
+    if (v.fabric) lines.push(`${fabricLabel}: ${v.fabric}`);
+    updateItem(idx, { product_id: p.id, variant_id: v.id, description: lines.join("\n"), unit_price: Number(v.selling_price) });
   };
 
   const toggleCustom = (idx: number, c: { name: string; price_delta: number }) => {
