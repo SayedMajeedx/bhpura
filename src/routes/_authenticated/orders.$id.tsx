@@ -763,6 +763,7 @@ Warm regards,
 }
 
 function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; totals: any; settings: any; currency: string }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
   const qc = useQueryClient();
