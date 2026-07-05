@@ -429,11 +429,20 @@ function OrderDetail() {
       </div>
 
       {/* Printable invoice */}
+      {(() => {
+        const addrs = (addressesQ.data ?? []).filter((a) => a.customer_id === order.customer_id);
+        const chosen = addrs.find((a) => a.id === order.shipping_address_id)
+          ?? addrs.find((a) => a.is_default)
+          ?? null;
+        return (
       <InvoicePreview
         order={{ ...order, subtotal: totals.subtotal, tax_amount: totals.taxAmount, total: totals.total }}
         items={items}
         settings={settingsQ.data}
+        shippingAddress={chosen}
       />
+        );
+      })()}
     </div>
   );
 }
