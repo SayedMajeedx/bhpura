@@ -36,14 +36,17 @@ export const Route = createFileRoute("/invoice/$id")({
       </div>
     </div>
   ),
-  errorComponent: ({ error }) => (
-    <div className="min-h-screen grid place-items-center bg-background px-4 text-center">
-      <div>
-        <h1 className="text-2xl font-display">Something went wrong</h1>
-        <p className="text-sm text-muted-foreground mt-2">{error.message}</p>
+  errorComponent: ({ error }) => {
+    if (typeof console !== "undefined") console.error("[invoice route] render error", error);
+    return (
+      <div className="min-h-screen grid place-items-center bg-background px-4 text-center">
+        <div>
+          <h1 className="text-2xl font-display">Something went wrong</h1>
+          <p className="text-sm text-muted-foreground mt-2">This invoice couldn't be loaded. Please try again later.</p>
+        </div>
       </div>
-    </div>
-  ),
+    );
+  },
 });
 
 const LABELS = {
