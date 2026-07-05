@@ -141,6 +141,8 @@ const en: Dict = {
   "orderDetail.subtotal": "Subtotal",
   "orderDetail.total": "Total",
   "orderDetail.orderDate": "Order date",
+  "orderDetail.deliveryAddress": "Delivery address",
+  "orderDetail.noDeliveryAddress": "No delivery address on file for this customer.",
 
   "settings.title": "Invoice settings",
   "settings.subtitle": "Customize how your invoices look and print.",
@@ -314,6 +316,8 @@ const ar: Dict = {
   "orderDetail.subtotal": "المجموع الفرعي",
   "orderDetail.total": "الإجمالي",
   "orderDetail.orderDate": "تاريخ الطلب",
+  "orderDetail.deliveryAddress": "عنوان التوصيل",
+  "orderDetail.noDeliveryAddress": "لا يوجد عنوان توصيل محفوظ لهذه العميلة.",
 
   "settings.title": "إعدادات الفاتورة",
   "settings.subtitle": "خصّصي شكل وطباعة فواتيرك.",
