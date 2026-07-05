@@ -137,6 +137,7 @@ function CustomersPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </Card>
       )}
     </div>
