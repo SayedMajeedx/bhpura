@@ -227,6 +227,38 @@ function OrderDetail() {
     } as any).eq("id", order.id);
     if (oe) return toast.error(oe.message);
 
+    // ── Activity log: detect changes vs saved state
+    const prev = (orderQ.data ?? {}) as any;
+    const logs: Array<{ action: string; en: string; ar: string; order_id: string }> = [];
+    if (prev.status !== order.status) {
+      logs.push({
+        action: "status_change",
+        order_id: order.id,
+        en: `Order status changed from "${prev.status ?? "—"}" to "${order.status}"`,
+        ar: `تم تغيير حالة الطلب من "${prev.status ?? "—"}" إلى "${order.status}"`,
+      });
+    }
+    const prevPay = prev.payment_status ?? "unpaid";
+    const nextPay = order.payment_status ?? "unpaid";
+    if (prevPay !== nextPay) {
+      logs.push({
+        action: "payment_change",
+        order_id: order.id,
+        en: `Payment status manually changed from "${prevPay}" to "${nextPay}"`,
+        ar: `تم تغيير حالة الدفع يدوياً من "${prevPay}" إلى "${nextPay}"`,
+      });
+    }
+    const prevAdvance = Number(prev.advance_paid ?? 0);
+    const nextAdvance = totals.advancePaid;
+    if (prevAdvance !== nextAdvance) {
+      logs.push({
+        action: "advance_change",
+        order_id: order.id,
+        en: `Advance payment updated from ${prevAdvance} to ${nextAdvance} ${currency}`,
+        ar: `تم تحديث المبلغ المقدم من ${prevAdvance} إلى ${nextAdvance} ${currency}`,
+      });
+    }
+
     await supabase.from("order_items").delete().eq("order_id", order.id);
     if (items.length > 0) {
       const { error: ie } = await supabase.from("order_items").insert(
