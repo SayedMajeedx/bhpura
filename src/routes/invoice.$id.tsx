@@ -131,9 +131,14 @@ function PublicInvoice() {
           </div>
           <button
             onClick={async () => {
-              const el = document.querySelector<HTMLElement>(".invoice-card");
-              const { downloadInvoicePdf } = await import("@/lib/download-invoice-pdf");
-              await downloadInvoicePdf(el, `invoice-${order.invoice_number ?? order.id}`);
+              try {
+                const el = document.querySelector<HTMLElement>(".invoice-card");
+                const { downloadInvoicePdf } = await import("@/lib/download-invoice-pdf");
+                await downloadInvoicePdf(el, `invoice-${order.invoice_number ?? order.id}`);
+              } catch (err) {
+                console.error("PDF download failed", err);
+                alert((err as Error)?.message ?? "PDF download failed");
+              }
             }}
             className="px-3 py-1 text-xs rounded-md border border-neutral-300 bg-white hover:bg-neutral-50"
           >

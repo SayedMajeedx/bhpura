@@ -437,9 +437,14 @@ function OrderDetail() {
           <Button variant="outline" onClick={copyLink}><LinkIcon className="h-4 w-4 mr-2" /> {t("orders.copyLink")}</Button>
           <Button variant="outline" onClick={printReceipt}><Receipt className="h-4 w-4 mr-2" /> {t("orders.printReceipt")}</Button>
           <Button variant="outline" onClick={async () => {
-            const el = document.querySelector<HTMLElement>(".printable-invoice");
-            const { downloadInvoicePdf } = await import("@/lib/download-invoice-pdf");
-            await downloadInvoicePdf(el, `invoice-${order.invoice_number ?? order.id}`);
+            try {
+              const el = document.querySelector<HTMLElement>(".printable-invoice");
+              const { downloadInvoicePdf } = await import("@/lib/download-invoice-pdf");
+              await downloadInvoicePdf(el, `invoice-${order.invoice_number ?? order.id}`);
+            } catch (err) {
+              console.error("PDF download failed", err);
+              toast.error((err as Error)?.message ?? "PDF download failed");
+            }
           }}><Printer className="h-4 w-4 mr-2" /> {t("orders.printA4")}</Button>
           <Button onClick={save}><Save className="h-4 w-4 mr-2" /> {t("common.save")}</Button>
         </div>
