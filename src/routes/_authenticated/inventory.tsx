@@ -238,7 +238,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   );
 }
 
-function VariantList({ productId, variants, onChanged }: { productId: string; variants: Variant[]; onChanged: () => void }) {
+function VariantList({ productId, productName, businessName, variants, onChanged }: { productId: string; productName: string; businessName: string | null; variants: Variant[]; onChanged: () => void }) {
   const t = useT();
   const { lang } = useI18n();
   const isAr = lang === "ar";
