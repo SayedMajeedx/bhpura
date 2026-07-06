@@ -59,7 +59,7 @@ export function PrintableLabel({ data }: { data: LabelData }) {
       {data.productName && <div className="label-name">{data.productName}</div>}
       {meta && <div className="label-meta">{meta}</div>}
       <div className="label-barcode">
-        <BarcodeSvg value={data.code} height={50} width={1.6} fontSize={14} />
+        <BarcodeSvg value={data.code} height={70} width={2.2} fontSize={14} margin={8} />
       </div>
       {data.price != null && <div className="label-price">{formatMoney(Number(data.price))}</div>}
     </div>
