@@ -173,7 +173,7 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
         if (!context) throw new Error("Unable to prepare barcode scanner.");
 
         while (!cancelled && !stoppedRef.current) {
-          if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth > 0 && video.videoHeight > 0) {
+          if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
