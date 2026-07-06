@@ -257,7 +257,8 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
               playsInline
               autoPlay
             />
-            <div className="pointer-events-none absolute inset-x-[12%] top-1/2 h-[34%] -translate-y-1/2 rounded-md border-2 border-primary/80 shadow-[0_0_0_999px_hsl(var(--background)/0.45)]" />
+            <div className="pointer-events-none absolute inset-0 bg-background/40" />
+            <div className="pointer-events-none absolute inset-x-[12%] top-1/2 h-[34%] -translate-y-1/2 rounded-md border-2 border-primary/80 bg-transparent" />
           </div>
           <div id={decodeContainerId} className="hidden" />
           {starting && !error && (
