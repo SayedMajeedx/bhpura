@@ -20,6 +20,7 @@ import { Route as AuthenticatedInventoryRouteImport } from './routes/_authentica
 import { Route as AuthenticatedExpensesRouteImport } from './routes/_authenticated/expenses'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCustomersRouteImport } from './routes/_authenticated/customers'
+import { Route as AuthenticatedCampaignsRouteImport } from './routes/_authenticated/campaigns'
 import { Route as AuthenticatedOrdersIndexRouteImport } from './routes/_authenticated/orders.index'
 import { Route as AuthenticatedOrdersIdRouteImport } from './routes/_authenticated/orders.$id'
 
@@ -77,6 +78,11 @@ const AuthenticatedCustomersRoute = AuthenticatedCustomersRouteImport.update({
   path: '/customers',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCampaignsRoute = AuthenticatedCampaignsRouteImport.update({
+  id: '/campaigns',
+  path: '/campaigns',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedOrdersIndexRoute =
   AuthenticatedOrdersIndexRouteImport.update({
     id: '/orders/',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/campaigns': typeof AuthenticatedCampaignsRoute
   '/customers': typeof AuthenticatedCustomersRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/expenses': typeof AuthenticatedExpensesRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/campaigns': typeof AuthenticatedCampaignsRoute
   '/customers': typeof AuthenticatedCustomersRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/expenses': typeof AuthenticatedExpensesRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/campaigns': typeof AuthenticatedCampaignsRoute
   '/_authenticated/customers': typeof AuthenticatedCustomersRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/expenses': typeof AuthenticatedExpensesRoute
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/forgot-password'
     | '/reset-password'
+    | '/campaigns'
     | '/customers'
     | '/dashboard'
     | '/expenses'
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/forgot-password'
     | '/reset-password'
+    | '/campaigns'
     | '/customers'
     | '/dashboard'
     | '/expenses'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/forgot-password'
     | '/reset-password'
+    | '/_authenticated/campaigns'
     | '/_authenticated/customers'
     | '/_authenticated/dashboard'
     | '/_authenticated/expenses'
@@ -267,6 +279,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCustomersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/campaigns': {
+      id: '/_authenticated/campaigns'
+      path: '/campaigns'
+      fullPath: '/campaigns'
+      preLoaderRoute: typeof AuthenticatedCampaignsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/orders/': {
       id: '/_authenticated/orders/'
       path: '/orders'
@@ -285,6 +304,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCampaignsRoute: typeof AuthenticatedCampaignsRoute
   AuthenticatedCustomersRoute: typeof AuthenticatedCustomersRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedExpensesRoute: typeof AuthenticatedExpensesRoute
@@ -295,6 +315,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCampaignsRoute: AuthenticatedCampaignsRoute,
   AuthenticatedCustomersRoute: AuthenticatedCustomersRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedExpensesRoute: AuthenticatedExpensesRoute,
@@ -318,13 +339,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

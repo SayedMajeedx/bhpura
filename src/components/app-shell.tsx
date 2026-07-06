@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Package, Users, ReceiptText, Settings, LogOut, Languages, Menu, Wallet } from "lucide-react";
+import { LayoutDashboard, Package, Users, ReceiptText, Settings, LogOut, Languages, Menu, Wallet, Megaphone } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
