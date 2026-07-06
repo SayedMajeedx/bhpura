@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Trash2, Printer, Save, Send, Search, Star, Receipt, Link as LinkIcon } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Printer, Save, Send, Search, Star, Receipt, Link as LinkIcon, ScanLine } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ import { printThermalReceipt } from "@/lib/thermal-print";
 import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES, PAYMENT_BADGE_LABEL, PAYMENT_BADGE_VALUES, type PaymentBadge } from "@/lib/payment-status";
 import { logActivityBatch } from "@/lib/activity-log";
 import { ActivityLogList } from "@/components/activity-log-list";
+import { BarcodeScanner } from "@/components/barcode-scanner";
 
 function formatDeliveryAddress(
   c: { region?: string | null; road?: string | null; house?: string | null; flat?: string | null; address?: string | null; city?: string | null } | null | undefined,
@@ -60,6 +61,7 @@ type Item = {
   description: string; quantity: number; unit_price: number;
   customizations: { name: string; price_delta: number }[];
   customization_total: number; line_total: number;
+  location: "main" | "incubator";
 };
 
 function OrderDetail() {
@@ -127,6 +129,7 @@ function OrderDetail() {
         customizations: i.customizations ?? [],
         customization_total: Number(i.customization_total),
         line_total: Number(i.line_total),
+        location: (i.location === "incubator" ? "incubator" : "main") as "main" | "incubator",
       })));
     }
   }, [orderQ.data]);
@@ -155,8 +158,47 @@ function OrderDetail() {
   const addItem = () => {
     setItems([...items, {
       description: "", quantity: 1, unit_price: 0, customizations: [],
-      customization_total: 0, line_total: 0,
+      customization_total: 0, line_total: 0, location: "main",
     }]);
+  };
+
+  const [scannerOpen, setScannerOpen] = useState(false);
+
+  const handleScanned = (code: string) => {
+    const trimmed = code.trim();
+    if (!trimmed) return;
+    const variants = variantsQ.data ?? [];
+    const products = productsQ.data ?? [];
+    const v = variants.find((x: any) => (x.barcode ?? "").trim() === trimmed || (x.sku ?? "").trim() === trimmed);
+    if (!v) {
+      toast.error(lang === "ar" ? `لم يتم العثور على الباركود: ${trimmed}` : `Barcode not found: ${trimmed}`);
+      return;
+    }
+    const p = products.find((x: any) => x.id === v.product_id);
+    const isAr = lang === "ar";
+    const sizeLabel = isAr ? "المقاس" : "Size";
+    const colorLabel = isAr ? "اللون" : "Color";
+    const fabricLabel = isAr ? "القماش" : "Fabric";
+    const lines = [p?.name ?? ""];
+    if (v.size) lines.push(`${sizeLabel}: ${v.size}`);
+    if (v.color) lines.push(`${colorLabel}: ${v.color}`);
+    if (v.fabric) lines.push(`${fabricLabel}: ${v.fabric}`);
+    // Default to whichever location has stock; prefer main.
+    const preferred: "main" | "incubator" =
+      (v.stock_main ?? 0) > 0 ? "main" : (v.stock_incubator ?? 0) > 0 ? "incubator" : "main";
+    const newItem: Item = {
+      product_id: v.product_id,
+      variant_id: v.id,
+      description: lines.filter(Boolean).join("\n"),
+      quantity: 1,
+      unit_price: Number(v.selling_price ?? 0),
+      customizations: [],
+      customization_total: 0,
+      line_total: Number(v.selling_price ?? 0),
+      location: preferred,
+    };
+    setItems((prev) => [...prev, newItem]);
+    toast.success(isAr ? "تمت إضافة القطعة" : "Item added");
   };
 
   const recalc = (i: Item): Item => {
@@ -274,6 +316,7 @@ function OrderDetail() {
           product_id: i.product_id ?? null, variant_id: i.variant_id ?? null,
           description: i.description, quantity: i.quantity, unit_price: i.unit_price,
           customizations: i.customizations, customization_total: i.customization_total, line_total: i.line_total,
+          location: i.location ?? "main",
         })),
       );
       if (ie) return toast.error(ie.message);
@@ -585,13 +628,25 @@ function OrderDetail() {
         </Card>
 
         <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
             <h3 className="font-display text-lg">{t("orderDetail.lineItems")}</h3>
-            <Button size="sm" variant="outline" onClick={addItem}><Plus className="h-3 w-3 mr-1" /> {t("orderDetail.addLine")}</Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => setScannerOpen(true)}>
+                <ScanLine className="h-3 w-3 mr-1" /> {lang === "ar" ? "مسح الباركود" : "Scan Barcode"}
+              </Button>
+              <Button size="sm" variant="outline" onClick={addItem}>
+                <Plus className="h-3 w-3 mr-1" /> {t("orderDetail.addLine")}
+              </Button>
+            </div>
           </div>
           {items.length === 0 && <p className="text-sm text-muted-foreground">{t("orderDetail.noLines")}</p>}
           <div className="space-y-4">
-            {items.map((it, idx) => (
+            {items.map((it, idx) => {
+              const variant = it.variant_id ? (variantsQ.data ?? []).find((x: any) => x.id === it.variant_id) : null;
+              const mainStock = Number((variant as any)?.stock_main ?? 0);
+              const incStock = Number((variant as any)?.stock_incubator ?? 0);
+              const isAr = lang === "ar";
+              return (
               <div key={idx} className="border border-border rounded-lg p-4 space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
                   <div className="sm:col-span-4">
@@ -621,6 +676,35 @@ function OrderDetail() {
                   <div className="sm:col-span-3"><Label>{t("orderDetail.unitPrice")}</Label>
                     <Input type="number" step="0.01" value={it.unit_price} onChange={(e) => updateItem(idx, { unit_price: Number(e.target.value) })} /></div>
                 </div>
+
+                {it.variant_id && (
+                  <div>
+                    <Label className="text-xs">{isAr ? "الموقع (خصم من)" : "Location (deduct from)"}</Label>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {([
+                        { key: "main", en: `Direct Sales · Main (${mainStock})`, ar: `الرئيسي (${mainStock})` },
+                        { key: "incubator", en: `Incubator (${incStock})`, ar: `الحاضنة (${incStock})` },
+                      ] as const).map((opt) => {
+                        const active = it.location === opt.key;
+                        return (
+                          <button
+                            key={opt.key}
+                            type="button"
+                            onClick={() => updateItem(idx, { location: opt.key })}
+                            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                              active
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "border-border hover:bg-secondary"
+                            }`}
+                          >
+                            {isAr ? opt.ar : opt.en}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <Label className="text-xs">{t("orderDetail.customizations")}</Label>
                   <div className="flex flex-wrap gap-2 mt-1">
@@ -647,8 +731,10 @@ function OrderDetail() {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
+          <BarcodeScanner open={scannerOpen} onOpenChange={setScannerOpen} onDetected={handleScanned} />
         </Card>
 
         <Card className="p-6">

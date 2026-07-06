@@ -8,10 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Package, TrendingUp } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, TrendingUp, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
-import { useT } from "@/lib/i18n";
+import { useT, useI18n } from "@/lib/i18n";
 import { ActivityLogList } from "@/components/activity-log-list";
 
 export const Route = createFileRoute("/_authenticated/inventory")({
@@ -22,6 +22,7 @@ type Product = { id: string; name: string; description: string | null; category:
 type Variant = {
   id: string; product_id: string; sku: string | null; size: string | null; color: string | null; fabric: string | null;
   cost_price: number; selling_price: number; stock: number;
+  stock_main: number; stock_incubator: number; barcode: string | null;
 };
 type Customization = { id: string; name: string; price_delta: number };
 
@@ -202,17 +203,30 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
 
 function VariantList({ productId, variants, onChanged }: { productId: string; variants: Variant[]; onChanged: () => void }) {
   const t = useT();
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
   const [adding, setAdding] = useState(false);
-  const empty = { size: "", color: "", fabric: "", sku: "", cost_price: "0", selling_price: "0", stock: "0" };
+  const empty = {
+    size: "", color: "", fabric: "", sku: "", barcode: "",
+    cost_price: "0", selling_price: "0",
+    stock_main: "0", stock_incubator: "0",
+  };
   const [row, setRow] = useState(empty);
+
+  const genBarcode = () => {
+    const rnd = Math.random().toString(36).slice(2, 8).toUpperCase();
+    return `PL-${Date.now().toString(36).toUpperCase().slice(-4)}${rnd}`;
+  };
 
   const add = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { error } = await supabase.from("product_variants").insert({
       user_id: user.id, product_id: productId,
-      size: row.size || null, color: row.color || null, fabric: row.fabric || null, sku: row.sku || null,
-      cost_price: Number(row.cost_price), selling_price: Number(row.selling_price), stock: Number(row.stock),
+      size: row.size || null, color: row.color || null, fabric: row.fabric || null,
+      sku: row.sku || null, barcode: row.barcode.trim() || null,
+      cost_price: Number(row.cost_price), selling_price: Number(row.selling_price),
+      stock_main: Number(row.stock_main), stock_incubator: Number(row.stock_incubator),
     });
     if (error) return toast.error(error.message);
     setRow(empty); setAdding(false); onChanged();
@@ -228,19 +242,26 @@ function VariantList({ productId, variants, onChanged }: { productId: string; va
     if (error) toast.error(error.message); else onChanged();
   };
 
+  const mainLabel = isAr ? "الرئيسي" : "Main";
+  const incLabel = isAr ? "الحاضنة" : "Incubator";
+  const barcodeLabel = isAr ? "الباركود" : "Barcode";
+
   return (
     <div className="mt-4 border-t border-border pt-4">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] text-sm">
+        <table className="w-full min-w-[900px] text-sm">
           <thead>
             <tr className="text-start text-xs uppercase tracking-wider text-muted-foreground">
               <th className="py-2 pe-3 text-start">{t("inventory.size")}</th>
               <th className="py-2 pe-3 text-start">{t("inventory.color")}</th>
               <th className="py-2 pe-3 text-start">{t("inventory.fabric")}</th>
               <th className="py-2 pe-3 text-start">{t("inventory.sku")}</th>
+              <th className="py-2 pe-3 text-start">{barcodeLabel}</th>
               <th className="py-2 pe-3 text-start">{t("inventory.cost")}</th>
               <th className="py-2 pe-3 text-start">{t("inventory.price")}</th>
               <th className="py-2 pe-3 text-start">{t("inventory.margin")}</th>
+              <th className="py-2 pe-3 text-start">{mainLabel}</th>
+              <th className="py-2 pe-3 text-start">{incLabel}</th>
               <th className="py-2 pe-3 text-start">{t("inventory.stock")}</th>
               <th className="w-8"></th>
             </tr>
@@ -254,10 +275,30 @@ function VariantList({ productId, variants, onChanged }: { productId: string; va
                   <td className="py-2 pe-3 text-start"><input className="bg-transparent w-20 outline-none text-start" defaultValue={v.color ?? ""} onBlur={(e) => update(v, { color: e.target.value || null })} /></td>
                   <td className="py-2 pe-3 text-start"><input className="bg-transparent w-20 outline-none text-start" defaultValue={v.fabric ?? ""} onBlur={(e) => update(v, { fabric: e.target.value || null })} /></td>
                   <td className="py-2 pe-3 text-start"><input className="bg-transparent w-24 outline-none text-start" defaultValue={v.sku ?? ""} onBlur={(e) => update(v, { sku: e.target.value || null })} /></td>
+                  <td className="py-2 pe-3 text-start">
+                    <div className="inline-flex items-center gap-1">
+                      <input
+                        className="bg-transparent w-28 outline-none text-start font-mono text-xs"
+                        placeholder={isAr ? "بدون" : "None"}
+                        defaultValue={v.barcode ?? ""}
+                        onBlur={(e) => update(v, { barcode: e.target.value.trim() || null })}
+                      />
+                      <button
+                        type="button"
+                        title={isAr ? "توليد باركود" : "Generate barcode"}
+                        className="text-muted-foreground hover:text-primary"
+                        onClick={() => update(v, { barcode: genBarcode() })}
+                      >
+                        <Wand2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </td>
                   <td className="py-2 pe-3 text-start"><input type="number" step="0.01" className="bg-transparent w-20 outline-none text-start" defaultValue={v.cost_price} onBlur={(e) => update(v, { cost_price: Number(e.target.value) })} /></td>
                   <td className="py-2 pe-3 text-start"><input type="number" step="0.01" className="bg-transparent w-24 outline-none text-start" defaultValue={v.selling_price} onBlur={(e) => update(v, { selling_price: Number(e.target.value) })} /></td>
                   <td className="py-2 pe-3 text-primary"><span className="inline-flex items-center gap-1"><TrendingUp className="h-3 w-3" />{margin.toFixed(0)}%</span></td>
-                  <td className="py-2 pe-3 text-start"><input type="number" className="bg-transparent w-16 outline-none text-start" defaultValue={v.stock} onBlur={(e) => update(v, { stock: Number(e.target.value) })} /></td>
+                  <td className="py-2 pe-3 text-start"><input type="number" className="bg-transparent w-16 outline-none text-start" defaultValue={v.stock_main ?? 0} onBlur={(e) => update(v, { stock_main: Number(e.target.value) })} /></td>
+                  <td className="py-2 pe-3 text-start"><input type="number" className="bg-transparent w-16 outline-none text-start" defaultValue={v.stock_incubator ?? 0} onBlur={(e) => update(v, { stock_incubator: Number(e.target.value) })} /></td>
+                  <td className="py-2 pe-3 text-start font-medium">{(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}</td>
                   <td className="text-end"><Button variant="ghost" size="icon" onClick={() => del(v.id)}><Trash2 className="h-3 w-3" /></Button></td>
                 </tr>
               );
@@ -268,10 +309,20 @@ function VariantList({ productId, variants, onChanged }: { productId: string; va
                 <td className="py-2 pe-3"><Input className="h-8 w-20 text-start" value={row.color} onChange={(e) => setRow({ ...row, color: e.target.value })} /></td>
                 <td className="py-2 pe-3"><Input className="h-8 w-20 text-start" value={row.fabric} onChange={(e) => setRow({ ...row, fabric: e.target.value })} /></td>
                 <td className="py-2 pe-3"><Input className="h-8 w-24 text-start" value={row.sku} onChange={(e) => setRow({ ...row, sku: e.target.value })} /></td>
+                <td className="py-2 pe-3">
+                  <div className="inline-flex items-center gap-1">
+                    <Input className="h-8 w-28 text-start font-mono text-xs" value={row.barcode} onChange={(e) => setRow({ ...row, barcode: e.target.value })} placeholder={isAr ? "اختياري" : "Optional"} />
+                    <button type="button" className="text-muted-foreground hover:text-primary" onClick={() => setRow({ ...row, barcode: genBarcode() })}>
+                      <Wand2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                </td>
                 <td className="py-2 pe-3"><Input className="h-8 w-20 text-start" type="number" step="0.01" value={row.cost_price} onChange={(e) => setRow({ ...row, cost_price: e.target.value })} /></td>
                 <td className="py-2 pe-3"><Input className="h-8 w-24 text-start" type="number" step="0.01" value={row.selling_price} onChange={(e) => setRow({ ...row, selling_price: e.target.value })} /></td>
                 <td></td>
-                <td className="py-2 pe-3"><Input className="h-8 w-16 text-start" type="number" value={row.stock} onChange={(e) => setRow({ ...row, stock: e.target.value })} /></td>
+                <td className="py-2 pe-3"><Input className="h-8 w-16 text-start" type="number" value={row.stock_main} onChange={(e) => setRow({ ...row, stock_main: e.target.value })} /></td>
+                <td className="py-2 pe-3"><Input className="h-8 w-16 text-start" type="number" value={row.stock_incubator} onChange={(e) => setRow({ ...row, stock_incubator: e.target.value })} /></td>
+                <td></td>
                 <td className="py-2"><div className="flex gap-1 justify-end"><Button size="sm" onClick={add}>{t("common.save")}</Button><Button size="sm" variant="ghost" onClick={() => setAdding(false)}>×</Button></div></td>
               </tr>
             )}

@@ -364,6 +364,7 @@ export type Database = {
           description: string
           id: string
           line_total: number
+          location: string
           order_id: string
           product_id: string | null
           quantity: number
@@ -378,6 +379,7 @@ export type Database = {
           description: string
           id?: string
           line_total?: number
+          location?: string
           order_id: string
           product_id?: string | null
           quantity?: number
@@ -392,6 +394,7 @@ export type Database = {
           description?: string
           id?: string
           line_total?: number
+          location?: string
           order_id?: string
           product_id?: string | null
           quantity?: number
@@ -515,6 +518,7 @@ export type Database = {
       }
       product_variants: {
         Row: {
+          barcode: string | null
           color: string | null
           cost_price: number
           created_at: string
@@ -525,10 +529,13 @@ export type Database = {
           size: string | null
           sku: string | null
           stock: number
+          stock_incubator: number
+          stock_main: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          barcode?: string | null
           color?: string | null
           cost_price?: number
           created_at?: string
@@ -539,10 +546,13 @@ export type Database = {
           size?: string | null
           sku?: string | null
           stock?: number
+          stock_incubator?: number
+          stock_main?: number
           updated_at?: string
           user_id: string
         }
         Update: {
+          barcode?: string | null
           color?: string | null
           cost_price?: number
           created_at?: string
@@ -553,6 +563,8 @@ export type Database = {
           size?: string | null
           sku?: string | null
           stock?: number
+          stock_incubator?: number
+          stock_main?: number
           updated_at?: string
           user_id?: string
         }
