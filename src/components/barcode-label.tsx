@@ -232,9 +232,23 @@ export function printLabels(labels: LabelData[]) {
   document.head.appendChild(style);
   document.body.appendChild(section);
 
+  // Radix Dialog locks the body (overflow:hidden, padding-right, pointer-events).
+  // Temporarily neutralize the inline styles so the print layout isn't clipped,
+  // then restore them after printing.
+  const body = document.body;
+  const html = document.documentElement;
+  const savedBody = body.getAttribute("style") ?? "";
+  const savedHtml = html.getAttribute("style") ?? "";
+  body.style.setProperty("overflow", "visible", "important");
+  body.style.setProperty("pointer-events", "auto", "important");
+  body.style.setProperty("padding-right", "0", "important");
+  html.style.setProperty("overflow", "visible", "important");
+
   const cleanup = () => {
     section.remove();
     style.remove();
+    if (savedBody) body.setAttribute("style", savedBody); else body.removeAttribute("style");
+    if (savedHtml) html.setAttribute("style", savedHtml); else html.removeAttribute("style");
     window.removeEventListener("afterprint", cleanup);
   };
 
