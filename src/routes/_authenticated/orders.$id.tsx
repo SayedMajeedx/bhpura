@@ -151,6 +151,8 @@ function OrderDetail() {
     [order?.payment_status, order?.status, totals.total, totals.advancePaid],
   );
 
+  const [scannerOpen, setScannerOpen] = useState(false);
+
   if (!order || !settingsQ.data) return <div className="p-8">Loading…</div>;
 
   const currency = order.currency ?? "BHD";
@@ -162,7 +164,6 @@ function OrderDetail() {
     }]);
   };
 
-  const [scannerOpen, setScannerOpen] = useState(false);
 
   const handleScanned = (code: string) => {
     const trimmed = code.trim();
