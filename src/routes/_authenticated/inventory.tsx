@@ -313,21 +313,41 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                   <td className="py-2 pe-3 text-start"><input className="bg-transparent w-20 outline-none text-start" defaultValue={v.fabric ?? ""} onBlur={(e) => update(v, { fabric: e.target.value || null })} /></td>
                   <td className="py-2 pe-3 text-start"><input className="bg-transparent w-24 outline-none text-start" defaultValue={v.sku ?? ""} onBlur={(e) => update(v, { sku: e.target.value || null })} /></td>
                   <td className="py-2 pe-3 text-start">
-                    <div className="inline-flex items-center gap-1">
-                      <input
-                        className="bg-transparent w-28 outline-none text-start font-mono text-xs"
-                        placeholder={isAr ? "بدون" : "None"}
-                        defaultValue={v.barcode ?? ""}
-                        onBlur={(e) => update(v, { barcode: e.target.value.trim() || null })}
-                      />
-                      <button
-                        type="button"
-                        title={isAr ? "توليد باركود" : "Generate barcode"}
-                        className="text-muted-foreground hover:text-primary"
-                        onClick={() => update(v, { barcode: genBarcode() })}
-                      >
-                        <Wand2 className="h-3 w-3" />
-                      </button>
+                    <div className="flex flex-col gap-1">
+                      <div className="inline-flex items-center gap-1">
+                        <input
+                          className="bg-transparent w-28 outline-none text-start font-mono text-xs"
+                          placeholder={isAr ? "بدون" : "None"}
+                          defaultValue={v.barcode ?? ""}
+                          onBlur={(e) => update(v, { barcode: e.target.value.trim() || null })}
+                        />
+                        <button
+                          type="button"
+                          title={isAr ? "توليد باركود" : "Generate barcode"}
+                          className="text-muted-foreground hover:text-primary"
+                          onClick={() => update(v, { barcode: genBarcode() })}
+                        >
+                          <Wand2 className="h-3 w-3" />
+                        </button>
+                        {v.barcode && (
+                          <PrintLabelButton
+                            label={isAr ? "طباعة" : "Print"}
+                            data={{
+                              code: v.barcode,
+                              productName,
+                              size: v.size,
+                              color: v.color,
+                              price: v.selling_price,
+                              businessName,
+                            }}
+                          />
+                        )}
+                      </div>
+                      {v.barcode && (
+                        <div className="rounded bg-white p-1 inline-block w-fit">
+                          <BarcodeSvg value={v.barcode} height={32} width={1.2} fontSize={10} margin={0} />
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="py-2 pe-3 text-start"><input type="number" step="0.01" className="bg-transparent w-20 outline-none text-start" defaultValue={v.cost_price} onBlur={(e) => update(v, { cost_price: Number(e.target.value) })} /></td>
