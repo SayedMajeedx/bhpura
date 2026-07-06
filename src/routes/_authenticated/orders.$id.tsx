@@ -170,13 +170,15 @@ function OrderDetail() {
   const openBarcodeScanner = () => {
     cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
     cameraStreamRef.current = null;
-    const promise = navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" } },
-      audio: false,
-    }).then((stream) => {
-      cameraStreamRef.current = stream;
-      return stream;
-    });
+    const promise = navigator.mediaDevices?.getUserMedia
+      ? navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      }).then((stream) => {
+        cameraStreamRef.current = stream;
+        return stream;
+      })
+      : Promise.reject(new Error("Camera access is not supported by this browser."));
     setCameraStreamPromise(promise);
     setScannerOpen(true);
   };
