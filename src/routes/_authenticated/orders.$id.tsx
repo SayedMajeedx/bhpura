@@ -158,8 +158,47 @@ function OrderDetail() {
   const addItem = () => {
     setItems([...items, {
       description: "", quantity: 1, unit_price: 0, customizations: [],
-      customization_total: 0, line_total: 0,
+      customization_total: 0, line_total: 0, location: "main",
     }]);
+  };
+
+  const [scannerOpen, setScannerOpen] = useState(false);
+
+  const handleScanned = (code: string) => {
+    const trimmed = code.trim();
+    if (!trimmed) return;
+    const variants = variantsQ.data ?? [];
+    const products = productsQ.data ?? [];
+    const v = variants.find((x: any) => (x.barcode ?? "").trim() === trimmed || (x.sku ?? "").trim() === trimmed);
+    if (!v) {
+      toast.error(lang === "ar" ? `لم يتم العثور على الباركود: ${trimmed}` : `Barcode not found: ${trimmed}`);
+      return;
+    }
+    const p = products.find((x: any) => x.id === v.product_id);
+    const isAr = lang === "ar";
+    const sizeLabel = isAr ? "المقاس" : "Size";
+    const colorLabel = isAr ? "اللون" : "Color";
+    const fabricLabel = isAr ? "القماش" : "Fabric";
+    const lines = [p?.name ?? ""];
+    if (v.size) lines.push(`${sizeLabel}: ${v.size}`);
+    if (v.color) lines.push(`${colorLabel}: ${v.color}`);
+    if (v.fabric) lines.push(`${fabricLabel}: ${v.fabric}`);
+    // Default to whichever location has stock; prefer main.
+    const preferred: "main" | "incubator" =
+      (v.stock_main ?? 0) > 0 ? "main" : (v.stock_incubator ?? 0) > 0 ? "incubator" : "main";
+    const newItem: Item = {
+      product_id: v.product_id,
+      variant_id: v.id,
+      description: lines.filter(Boolean).join("\n"),
+      quantity: 1,
+      unit_price: Number(v.selling_price ?? 0),
+      customizations: [],
+      customization_total: 0,
+      line_total: Number(v.selling_price ?? 0),
+      location: preferred,
+    };
+    setItems((prev) => [...prev, newItem]);
+    toast.success(isAr ? "تمت إضافة القطعة" : "Item added");
   };
 
   const recalc = (i: Item): Item => {
