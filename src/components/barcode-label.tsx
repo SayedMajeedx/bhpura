@@ -67,151 +67,135 @@ export function PrintableLabel({ data }: { data: LabelData }) {
 }
 
 /**
- * Opens a new window with the given labels formatted for printing, then triggers print.
- * Using a separate window avoids fighting the app's print styles.
+ * Prints one or more sticker labels using an isolated hidden iframe so the
+ * dashboard chrome (sidebar, header, backgrounds) is NEVER included in the
+ * print output. Each label prints on its own 50mm × 30mm page.
  */
 export function printLabels(labels: LabelData[]) {
+  if (!labels.length) return;
+
   // Render barcodes off-DOM as SVG strings using a temp svg element in the current doc.
   const svgs = labels.map((l) => {
     const tmp = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     try {
       JsBarcode(tmp, l.code, {
         format: "CODE128",
-        height: 70,
-        width: 2.2,
-        fontSize: 14,
+        height: 60,
+        width: 2,
+        fontSize: 12,
         displayValue: true,
-        margin: 8,
+        margin: 4,
         background: "#ffffff",
         lineColor: "#000000",
       });
     } catch {
-      // skip
+      /* skip invalid codes */
     }
     return tmp.outerHTML;
   });
 
-  const bodyHtml = `
-  <div class="sheet">
-    ${labels
-      .map(
-        (l, i) => `
-      <div class="label">
-        ${l.productName ? `<div class="name">${escapeHtml(l.productName)}</div>` : ""}
-        ${
-          [l.size, l.color].filter(Boolean).length
-            ? `<div class="meta">${escapeHtml([l.size, l.color].filter(Boolean).join(" · "))}</div>`
-            : ""
-        }
+  const labelHtml = labels
+    .map((l, i) => {
+      const bits = [l.productName, l.size, l.color].filter(Boolean) as string[];
+      const priceStr = l.price != null ? `${formatMoney(Number(l.price))}` : "";
+      const info = [bits.join(" - "), priceStr].filter(Boolean).join(" - ");
+      return `<div class="label">
         <div class="bc">${svgs[i] ?? ""}</div>
-        ${l.price != null ? `<div class="price">${escapeHtml(formatMoney(Number(l.price)))}</div>` : ""}
-      </div>`
-      )
-      .join("")}
-  </div>`;
+        ${info ? `<div class="info">${escapeHtml(info)}</div>` : ""}
+      </div>`;
+    })
+    .join("");
 
-  // Sticker sheet — one label per page at 50mm × 30mm, no page margins,
-  // so the browser prints ONLY the tag (no dashboard chrome, no headers).
   const styles = `
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { background: #fff; color: #000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
-  .sheet { display: block; }
-  .label {
-    width: 50mm; height: 30mm;
-    padding: 1mm 1.5mm;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    text-align: center; overflow: hidden;
-    page-break-after: always; break-after: page;
-  }
-  .label:last-child { page-break-after: auto; break-after: auto; }
-  .name { font-size: 7pt; font-weight: 700; line-height: 1.1; max-height: 2.4em; overflow: hidden; }
-  .meta { font-size: 6pt; color: #222; margin-top: 0.4mm; }
-  .bc { margin-top: 0.6mm; line-height: 0; }
-  .bc svg { width: 46mm; height: 14mm; display: block; }
-  .price { font-size: 7pt; font-weight: 700; margin-top: 0.4mm; }
-  .toolbar { position: fixed; top: 0; left: 0; right: 0; padding: 10px 12px; background: #fff; border-bottom: 1px solid #eee; display: flex; gap: 8px; justify-content: flex-end; z-index: 10; }
-  .toolbar button { padding: 10px 16px; font-size: 14px; cursor: pointer; border-radius: 6px; border: 1px solid #ddd; background: #f8f8f8; }
-  .toolbar button.primary { background: #111; color: #fff; border-color: #111; }
-  .content { padding-top: 56px; }
-  @page { size: 50mm 30mm; margin: 0; }
-  @media print {
-    .toolbar { display: none !important; }
-    .content { padding-top: 0 !important; }
-    html, body { width: 50mm; }
-  }`;
+    @page { size: 50mm 30mm; margin: 0; }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #fff;
+      color: #000;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    }
+    .label {
+      width: 50mm;
+      height: 30mm;
+      margin: 0;
+      padding: 5px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+      page-break-after: always;
+      break-after: page;
+    }
+    .label:last-child { page-break-after: auto; break-after: auto; }
+    .bc { line-height: 0; }
+    .bc svg { width: 44mm; height: 16mm; display: block; }
+    .info {
+      margin-top: 1mm;
+      font-size: 7pt;
+      font-weight: 600;
+      line-height: 1.15;
+      max-width: 46mm;
+      word-break: break-word;
+    }
+  `;
 
-  const html = `<!doctype html><html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Barcode labels</title><style>${styles}</style></head><body><div class="toolbar"><button onclick="window.close && window.close()">Close</button><button class="primary" onclick="window.focus();window.print()">Print</button></div><div class="content">${bodyHtml}</div><script>window.addEventListener('load',function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}} ,400);});</script></body></html>`;
+  const html = `<!doctype html><html><head><meta charset="utf-8" /><title>Label</title><style>${styles}</style></head><body>${labelHtml}</body></html>`;
 
-  // Mobile browsers (iOS Safari, Android Chrome) frequently block window.open
-  // outside a strict user gesture, and even when a popup opens, window.print()
-  // inside it is unreliable. Use a hidden iframe as the primary strategy — it
-  // works in-page without popup permission, and prints the current tab.
-  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  // Remove any previous print iframe still in the DOM.
+  document.querySelectorAll("iframe[data-print-labels]").forEach((n) => n.remove());
 
-  const printViaIframe = () => {
-    // Clean up any previous print iframe.
-    document.querySelectorAll("iframe[data-print-labels]").forEach((n) => n.remove());
-    const iframe = document.createElement("iframe");
-    iframe.setAttribute("data-print-labels", "1");
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "0";
-    iframe.setAttribute("aria-hidden", "true");
-    document.body.appendChild(iframe);
+  const iframe = document.createElement("iframe");
+  iframe.setAttribute("data-print-labels", "1");
+  iframe.setAttribute("aria-hidden", "true");
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
+  iframe.style.opacity = "0";
+  iframe.style.pointerEvents = "none";
+  document.body.appendChild(iframe);
 
-    const triggerPrint = () => {
-      try {
-        const win = iframe.contentWindow;
-        if (!win) return;
-        win.focus();
-        win.print();
-      } catch {
-        /* noop */
-      }
-    };
-
-    iframe.onload = () => {
-      // Give the browser a tick to layout SVG barcodes before printing.
-      setTimeout(triggerPrint, 350);
-    };
-
-    const doc = iframe.contentDocument;
-    if (!doc) return;
-    doc.open();
-    doc.write(html);
-    doc.close();
-
-    // Remove iframe after print dialog interaction on desktop.
-    setTimeout(() => {
-      try {
-        iframe.remove();
-      } catch {
-        /* noop */
-      }
-    }, 60_000);
+  const triggerPrint = () => {
+    try {
+      const win = iframe.contentWindow;
+      if (!win) return;
+      win.focus();
+      win.print();
+    } catch {
+      /* noop */
+    }
   };
 
-  if (isMobile) {
-    printViaIframe();
-    return;
-  }
+  iframe.onload = () => {
+    // Give the browser a tick to lay out SVG barcodes before printing.
+    setTimeout(triggerPrint, 300);
+  };
 
-  // Desktop: try popup first for a nicer preview; fall back to iframe if blocked.
-  try {
-    const w = window.open("", "_blank", "width=900,height=700");
-    if (!w) {
-      printViaIframe();
-      return;
+  const doc = iframe.contentDocument;
+  if (!doc) return;
+  doc.open();
+  doc.write(html);
+  doc.close();
+
+  // Clean up after the print dialog has had time to open/close.
+  setTimeout(() => {
+    try {
+      iframe.remove();
+    } catch {
+      /* noop */
     }
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
-  } catch {
-    printViaIframe();
-  }
+  }, 60_000);
 }
 
 
