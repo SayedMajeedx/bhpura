@@ -21,6 +21,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { to: "/dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
     { to: "/inventory", label: t("nav.inventory"), icon: Package },
     { to: "/customers", label: t("nav.customers"), icon: Users },
+    { to: "/campaigns", label: lang === "ar" ? "حملات الواتساب" : "WhatsApp Campaigns", icon: Megaphone },
     { to: "/orders", label: t("nav.orders"), icon: ReceiptText },
     { to: "/expenses", label: t("nav.expenses"), icon: Wallet },
     { to: "/settings", label: t("nav.settings"), icon: Settings },
