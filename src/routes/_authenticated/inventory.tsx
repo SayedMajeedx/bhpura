@@ -8,11 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Package, TrendingUp, Wand2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, TrendingUp, Wand2, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
 import { ActivityLogList } from "@/components/activity-log-list";
+import { BarcodeSvg, PrintLabelButton, printLabels, type LabelData } from "@/components/barcode-label";
 
 export const Route = createFileRoute("/_authenticated/inventory")({
   component: Inventory,
