@@ -125,19 +125,45 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
         const decoder = getDecoder();
 
         const cameraConfig: MediaTrackConstraints = deviceId
-          ? { deviceId: { exact: deviceId } }
-          : { facingMode: { ideal: "environment" } };
+          ? {
+              deviceId: { exact: deviceId },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+              frameRate: { ideal: 30 },
+            }
+          : {
+              facingMode: { ideal: "environment" },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+              frameRate: { ideal: 30 },
+            };
 
         const config = {
-          fps: 12,
+          fps: 15,
           qrbox: (viewfinderWidth: number, viewfinderHeight: number) => ({
-            width: Math.floor(viewfinderWidth * 0.88),
-            height: Math.floor(viewfinderHeight * 0.4),
+            width: Math.floor(viewfinderWidth * 0.9),
+            height: Math.floor(viewfinderHeight * 0.45),
           }),
           aspectRatio: 1,
           disableFlip: false,
           formatsToSupport: SUPPORTED_FORMATS,
+          videoConstraints: cameraConfig,
           experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+        };
+
+        const applyContinuousFocus = () => {
+          try {
+            const region = document.getElementById(DECODE_REGION_ID);
+            const video = region?.querySelector("video") as HTMLVideoElement | null;
+            const track = (video?.srcObject as MediaStream | null)?.getVideoTracks?.()[0];
+            if (!track) return;
+            const caps: any = track.getCapabilities?.() ?? {};
+            const advanced: any[] = [];
+            if (caps.focusMode?.includes?.("continuous")) advanced.push({ focusMode: "continuous" });
+            if (caps.exposureMode?.includes?.("continuous")) advanced.push({ exposureMode: "continuous" });
+            if (caps.whiteBalanceMode?.includes?.("continuous")) advanced.push({ whiteBalanceMode: "continuous" });
+            if (advanced.length) void track.applyConstraints({ advanced } as any).catch(() => {});
+          } catch { /* noop */ }
         };
 
         const onSuccess = (decodedText: string) => {
@@ -167,6 +193,9 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
             throw err;
           }
         }
+
+        // Give the video element a tick to attach, then enable continuous autofocus.
+        setTimeout(applyContinuousFocus, 600);
 
         if (cancelled) {
           await stopCamera();

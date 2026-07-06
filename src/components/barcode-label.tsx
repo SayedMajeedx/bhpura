@@ -92,44 +92,52 @@ export function printLabels(labels: LabelData[]) {
   });
 
   const bodyHtml = `
-  <div class="grid">
+  <div class="sheet">
     ${labels
       .map(
         (l, i) => `
       <div class="label">
-        ${l.businessName ? `<div class="biz">${escapeHtml(l.businessName)}</div>` : ""}
         ${l.productName ? `<div class="name">${escapeHtml(l.productName)}</div>` : ""}
         ${
           [l.size, l.color].filter(Boolean).length
             ? `<div class="meta">${escapeHtml([l.size, l.color].filter(Boolean).join(" · "))}</div>`
             : ""
         }
-        <div>${svgs[i] ?? ""}</div>
+        <div class="bc">${svgs[i] ?? ""}</div>
         ${l.price != null ? `<div class="price">${escapeHtml(formatMoney(Number(l.price)))}</div>` : ""}
       </div>`
       )
       .join("")}
   </div>`;
 
+  // Sticker sheet — one label per page at 50mm × 30mm, no page margins,
+  // so the browser prints ONLY the tag (no dashboard chrome, no headers).
   const styles = `
-  * { box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 12mm; background: #fff; color: #000; }
-  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6mm; }
-  .label { border: 1px dashed #ccc; padding: 4mm; page-break-inside: avoid; break-inside: avoid; text-align: center; background: #fff; }
-  .biz { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 2mm; }
-  .name { font-size: 12px; font-weight: 600; margin-bottom: 1mm; }
-  .meta { font-size: 10px; color: #444; margin-bottom: 2mm; }
-  .price { font-size: 12px; font-weight: 700; margin-top: 2mm; }
-  svg { max-width: 100%; height: auto; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #fff; color: #000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
+  .sheet { display: block; }
+  .label {
+    width: 50mm; height: 30mm;
+    padding: 1mm 1.5mm;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; overflow: hidden;
+    page-break-after: always; break-after: page;
+  }
+  .label:last-child { page-break-after: auto; break-after: auto; }
+  .name { font-size: 7pt; font-weight: 700; line-height: 1.1; max-height: 2.4em; overflow: hidden; }
+  .meta { font-size: 6pt; color: #222; margin-top: 0.4mm; }
+  .bc { margin-top: 0.6mm; line-height: 0; }
+  .bc svg { width: 46mm; height: 14mm; display: block; }
+  .price { font-size: 7pt; font-weight: 700; margin-top: 0.4mm; }
   .toolbar { position: fixed; top: 0; left: 0; right: 0; padding: 10px 12px; background: #fff; border-bottom: 1px solid #eee; display: flex; gap: 8px; justify-content: flex-end; z-index: 10; }
   .toolbar button { padding: 10px 16px; font-size: 14px; cursor: pointer; border-radius: 6px; border: 1px solid #ddd; background: #f8f8f8; }
   .toolbar button.primary { background: #111; color: #fff; border-color: #111; }
   .content { padding-top: 56px; }
+  @page { size: 50mm 30mm; margin: 0; }
   @media print {
-    body { padding: 8mm; }
-    .toolbar { display: none; }
-    .content { padding-top: 0; }
-    @page { margin: 8mm; }
+    .toolbar { display: none !important; }
+    .content { padding-top: 0 !important; }
+    html, body { width: 50mm; }
   }`;
 
   const html = `<!doctype html><html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Barcode labels</title><style>${styles}</style></head><body><div class="toolbar"><button onclick="window.close && window.close()">Close</button><button class="primary" onclick="window.focus();window.print()">Print</button></div><div class="content">${bodyHtml}</div><script>window.addEventListener('load',function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}} ,400);});</script></body></html>`;

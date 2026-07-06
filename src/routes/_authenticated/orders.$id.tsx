@@ -170,16 +170,32 @@ function OrderDetail() {
   const openBarcodeScanner = () => {
     cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
     cameraStreamRef.current = null;
+    const hd = {
+      video: {
+        facingMode: { ideal: "environment" as const },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        frameRate: { ideal: 30 },
+      },
+      audio: false,
+    };
     const promise = navigator.mediaDevices?.getUserMedia
-      ? navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-        audio: false,
-      }).catch((error) => {
+      ? navigator.mediaDevices.getUserMedia(hd).catch((error) => {
         if (error?.name === "OverconstrainedError" || error?.name === "NotFoundError") {
-          return navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          return navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
         }
         throw error;
-      }).then((stream) => {
+      }).then(async (stream) => {
+        // Try to enable continuous autofocus (supported on most modern mobile browsers).
+        try {
+          const track = stream.getVideoTracks()[0];
+          const caps: any = track.getCapabilities?.() ?? {};
+          const advanced: any[] = [];
+          if (caps.focusMode?.includes?.("continuous")) advanced.push({ focusMode: "continuous" });
+          if (caps.exposureMode?.includes?.("continuous")) advanced.push({ exposureMode: "continuous" });
+          if (caps.whiteBalanceMode?.includes?.("continuous")) advanced.push({ whiteBalanceMode: "continuous" });
+          if (advanced.length) await track.applyConstraints({ advanced } as any).catch(() => {});
+        } catch { /* noop */ }
         cameraStreamRef.current = stream;
         return stream;
       })
