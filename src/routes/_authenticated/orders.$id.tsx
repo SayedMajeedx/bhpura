@@ -61,6 +61,7 @@ type Item = {
   description: string; quantity: number; unit_price: number;
   customizations: { name: string; price_delta: number }[];
   customization_total: number; line_total: number;
+  location: "main" | "incubator";
 };
 
 function OrderDetail() {
