@@ -91,6 +91,7 @@ function Inventory() {
         <ProductsSection
           products={products.data ?? []}
           variants={variants.data ?? []}
+          businessName={businessName.data ?? null}
           onChanged={() => { qc.invalidateQueries({ queryKey: ["products"] }); qc.invalidateQueries({ queryKey: ["variants"] }); }}
         />
       ) : (
