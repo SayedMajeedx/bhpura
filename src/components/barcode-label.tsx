@@ -51,19 +51,6 @@ export type LabelData = {
   businessName?: string | null;
 };
 
-export function openLabelPrintWindow() {
-  const printWindow = window.open("", "_blank");
-  if (!printWindow) {
-    window.alert("Please allow pop-ups to print barcode labels.");
-    return null;
-  }
-
-  printWindow.document.open();
-  printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8" /><meta name="viewport" content="width=800, initial-scale=1" /><title>Preparing labels</title></head><body style="margin:0;font-family:system-ui,sans-serif;color:#000;background:#fff;">Preparing barcode labels...</body></html>`);
-  printWindow.document.close();
-  return printWindow;
-}
-
 export function PrintableLabel({ data }: { data: LabelData }) {
   const meta = [data.size, data.color].filter(Boolean).join(" · ");
   return (
@@ -80,15 +67,11 @@ export function PrintableLabel({ data }: { data: LabelData }) {
 }
 
 /**
- * Prints one or more sticker labels in a dedicated temporary window. Mobile
- * browsers such as Brave block background iframe printing, so this flow writes
- * a clean standalone document and prints only the 50mm × 30mm labels.
+ * Prints one or more sticker labels using an in-page print section. This avoids
+ * mobile popup blockers while print CSS hides the rest of the dashboard.
  */
-export function printLabels(labels: LabelData[], targetWindow?: Window | null) {
+export function printLabels(labels: LabelData[]) {
   if (!labels.length) return;
-
-  const printWindow = targetWindow ?? openLabelPrintWindow();
-  if (!printWindow) return;
 
   // Render barcodes off-DOM as SVG strings using a temp svg element in the current doc.
   const svgs = labels.map((l) => {
@@ -122,22 +105,29 @@ export function printLabels(labels: LabelData[], targetWindow?: Window | null) {
 
   const styles = `
     @page { size: 50mm 30mm; margin: 0; }
-    * { box-sizing: border-box !important; -webkit-text-size-adjust: none !important; text-size-adjust: none !important; }
-    html, body {
+    #print-section {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 50mm !important;
+      min-height: 30mm !important;
       margin: 0 !important;
       padding: 0 !important;
-      width: 50mm !important;
-      min-width: 50mm !important;
-      max-width: 50mm !important;
       background: #fff !important;
       color: #000 !important;
+      opacity: 0;
+      pointer-events: none;
+      z-index: -1;
+    }
+    #print-section, #print-section * {
+      box-sizing: border-box !important;
+      -webkit-text-size-adjust: none !important;
+      text-size-adjust: none !important;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
-    }
-    body {
       font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
     }
-    .barcode-card {
+    #print-section .barcode-card {
       width: 50mm !important;
       height: 30mm !important;
       min-width: 50mm !important;
@@ -155,19 +145,19 @@ export function printLabels(labels: LabelData[], targetWindow?: Window | null) {
       page-break-after: always !important;
       break-after: page !important;
     }
-    .barcode-image {
+    #print-section .barcode-image {
       width: 40mm !important;
       height: auto !important;
       line-height: 0 !important;
       flex: 0 0 auto !important;
     }
-    .barcode-image svg {
+    #print-section .barcode-image svg {
       width: 40mm !important;
       height: auto !important;
       max-width: 40mm !important;
       display: block !important;
     }
-    .barcode-text {
+    #print-section .barcode-text {
       margin-top: 2px !important;
       font-size: 10px !important;
       font-weight: bold !important;
@@ -178,11 +168,24 @@ export function printLabels(labels: LabelData[], targetWindow?: Window | null) {
       overflow: hidden !important;
     }
     @media print {
-      body { margin: 0 !important; padding: 0 !important; }
+      body * { visibility: hidden !important; }
+      #print-section, #print-section * { visibility: visible !important; }
       html, body {
-        width: 50mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
       }
-      .barcode-card {
+      #print-section {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        min-width: 50mm !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        z-index: 2147483647 !important;
+      }
+      #print-section .barcode-card {
         width: 50mm !important;
         height: 30mm !important;
         page-break-after: always !important;
@@ -194,36 +197,43 @@ export function printLabels(labels: LabelData[], targetWindow?: Window | null) {
         box-sizing: border-box !important;
         padding: 5px !important;
       }
-      .barcode-image { width: 40mm !important; height: auto !important; }
-      .barcode-image svg { width: 40mm !important; height: auto !important; }
-      .barcode-text { font-size: 10px !important; font-weight: bold !important; margin-top: 2px !important; }
+      #print-section .barcode-image { width: 40mm !important; height: auto !important; }
+      #print-section .barcode-image svg { width: 40mm !important; height: auto !important; }
+      #print-section .barcode-text { font-size: 10px !important; font-weight: bold !important; margin-top: 2px !important; }
     }
   `;
 
-  const html = `<!doctype html><html><head><meta charset="utf-8" /><meta name="viewport" content="width=800, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" /><title>Barcode Labels</title><style>${styles}</style></head><body>${labelHtml}</body></html>`;
+  const styleId = "barcode-print-style";
+  const sectionId = "print-section";
+  document.getElementById(styleId)?.remove();
+  document.getElementById(sectionId)?.remove();
 
-  printWindow.document.open();
-  printWindow.document.write(html);
-  printWindow.document.close();
+  const style = document.createElement("style");
+  style.id = styleId;
+  style.textContent = styles;
 
-  const closePrintWindow = () => {
-    try {
-      printWindow.close();
-    } catch {
-      /* noop */
-    }
+  const section = document.createElement("div");
+  section.id = sectionId;
+  section.innerHTML = labelHtml;
+
+  document.head.appendChild(style);
+  document.body.appendChild(section);
+
+  const cleanup = () => {
+    section.remove();
+    style.remove();
+    window.removeEventListener("afterprint", cleanup);
   };
 
-  printWindow.onafterprint = closePrintWindow;
+  window.addEventListener("afterprint", cleanup, { once: true });
   setTimeout(() => {
     try {
-      printWindow.focus();
-      printWindow.print();
-      setTimeout(closePrintWindow, 1_000);
+      window.print();
+      setTimeout(cleanup, 1_000);
     } catch {
-      closePrintWindow();
+      cleanup();
     }
-  }, 250);
+  }, 150);
 }
 
 

@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
 import { ActivityLogList } from "@/components/activity-log-list";
-import { BarcodeSvg, PrintLabelButton, openLabelPrintWindow, printLabels, type LabelData } from "@/components/barcode-label";
+import { BarcodeSvg, PrintLabelButton, printLabels, type LabelData } from "@/components/barcode-label";
 
 export const Route = createFileRoute("/_authenticated/inventory")({
   component: Inventory,
@@ -122,9 +122,6 @@ function ProductsSection({ products, variants, businessName, onChanged }: { prod
   const isAr = useI18n().lang === "ar";
 
   const printAll = async () => {
-    const printWindow = openLabelPrintWindow();
-    if (!printWindow) return;
-
     const labels: LabelData[] = [];
     const [{ data: freshProducts, error: productsError }, { data: freshVariants, error: variantsError }] = await Promise.all([
       supabase.from("products").select("id, name").order("created_at", { ascending: false }),
@@ -136,7 +133,6 @@ function ProductsSection({ products, variants, businessName, onChanged }: { prod
     ]);
 
     if (productsError || variantsError) {
-      printWindow.close();
       toast.error(productsError?.message ?? variantsError?.message ?? (isAr ? "تعذر تحميل الباركودات" : "Could not load barcodes"));
       return;
     }
@@ -158,11 +154,10 @@ function ProductsSection({ products, variants, businessName, onChanged }: { prod
       }
     }
     if (labels.length === 0) {
-      printWindow.close();
       toast.error(isAr ? "لا توجد باركودات للطباعة" : "No barcodes to print");
       return;
     }
-    printLabels(labels, printWindow);
+    printLabels(labels);
   };
 
   return (
