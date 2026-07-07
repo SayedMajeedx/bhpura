@@ -354,7 +354,7 @@ function OrderDetail() {
 
     await supabase.from("order_items").delete().eq("order_id", order.id);
     if (items.length > 0) {
-      const { error: ie } = await supabase.from("order_items").insert(
+      const { error: ie } = await (supabase.from("order_items") as any).insert(
         items.map((i) => ({
           user_id: user.id, order_id: order.id,
           product_id: i.product_id ?? null, variant_id: i.variant_id ?? null,
@@ -1384,7 +1384,7 @@ function ManageTemplatesDialog({ open, onOpenChange, templates, onChanged }: {
     if (editing.id) {
       ({ error } = await supabase.from("message_templates").update(payload).eq("id", editing.id));
     } else {
-      ({ error } = await supabase.from("message_templates").insert(payload));
+      ({ error } = await (supabase.from("message_templates") as any).insert(payload));
     }
     if (error) return toast.error(error.message);
     toast.success("Saved");
