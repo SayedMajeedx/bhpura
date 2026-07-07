@@ -66,7 +66,7 @@ function Checkout() {
         p_customer: form,
         p_items: cart.map((c) => ({ variant_id: c.variant_id, quantity: c.qty })),
         p_payment_method: method,
-        p_notes: form.notes || null,
+        p_notes: form.notes || undefined,
       });
       if (error) throw error;
       const orderId = (data as any)?.order_id;
