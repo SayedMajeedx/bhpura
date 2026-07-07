@@ -178,19 +178,8 @@ function OrderDetail() {
   const [cameraStreamPromise, setCameraStreamPromise] = useState<Promise<MediaStream> | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
 
-  if (orderQ.isSuccess && !orderQ.data) {
-    return (
-      <div className="p-8 max-w-lg mx-auto">
-        <Card className="p-8 text-center space-y-3">
-          <h2 className="text-xl font-display">{t("orders.title")}</h2>
-          <p className="text-muted-foreground">{t("orders.notFound") || "Order not found."}</p>
-          <Link to="/b/$slug/orders" params={{ slug: brand.slug }} className="text-primary underline">
-            ← {t("orders.title")}
-          </Link>
-        </Card>
-      </div>
-    );
-  }
+
+
   if (!order || !settingsQ.data) return <div className="p-8">Loading…</div>;
 
 
