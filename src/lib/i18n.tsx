@@ -468,7 +468,7 @@ const ar: Dict = {
   "inventory.customizations": "إضافات التخصيص",
   "inventory.newProduct": "منتج جديد",
   "inventory.editProduct": "تعديل المنتج",
-  "inventory.none": "لا توجد منتجات بعد. أضيفي أول عباءة للبدء.",
+  "inventory.none": "لا توجد منتجات بعد. أضف منتجك الأول للبدء.",
   "inventory.name": "الاسم",
   "inventory.category": "الفئة",
   "inventory.categoryPh": "مثال: يومي، مناسبات",
