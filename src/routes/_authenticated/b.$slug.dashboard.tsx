@@ -6,6 +6,7 @@ import { Package, Users, ReceiptText, TrendingUp, CalendarDays, Trophy, Wallet, 
 import { formatMoney } from "@/lib/format";
 import { useI18n, useT } from "@/lib/i18n";
 import { useProfile } from "@/lib/profile-context";
+import { useBrand } from "@/lib/brand-context";
 
 export const Route = createFileRoute("/_authenticated/b/$slug/dashboard")({
   component: Dashboard,
