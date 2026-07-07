@@ -61,15 +61,15 @@ function OrdersList() {
   const create = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data: settings } = await supabase.from("business_settings").select("*").eq("user_id", user.id).maybeSingle();
+    const { data: settings } = await supabase.from("business_settings").select("*").eq("brand_id", brandId).maybeSingle();
     const nextNum = settings?.next_invoice_number ?? 1001;
     const currency = settings?.currency ?? "BHD";
     const taxRate = settings?.default_tax_rate ?? 15;
     const { data: order, error } = await (supabase.from("orders") as any).insert({
-      user_id: user.id, invoice_number: nextNum, currency, tax_rate: taxRate,
+      user_id: user.id, brand_id: brandId, invoice_number: nextNum, currency, tax_rate: taxRate,
     }).select().single();
     if (error) return toast.error(error.message);
-    await supabase.from("business_settings").update({ next_invoice_number: nextNum + 1 }).eq("user_id", user.id);
+    await supabase.from("business_settings").update({ next_invoice_number: nextNum + 1 }).eq("brand_id", brandId);
     navigate({ to: "/b/$slug/orders/$id", params: { slug, id: order.id } });
   };
 

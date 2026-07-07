@@ -1228,10 +1228,12 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
     notes: order?.notes ?? "",
   }), [order, totals, settings, currency]);
 
+  const brand = useBrand();
+  const brandId = brand.id;
   const templatesQ = useQuery({
-    queryKey: ["message-templates"],
+    queryKey: ["message-templates", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("message_templates").select("*").order("created_at");
+      const { data, error } = await supabase.from("message_templates").select("*").eq("brand_id", brandId).order("created_at");
       if (error) throw error;
       return (data ?? []) as Tpl[];
     },
