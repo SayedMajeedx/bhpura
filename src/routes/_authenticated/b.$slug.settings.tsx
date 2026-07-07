@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
-import { useT } from "@/lib/i18n";
+import { useT, useI18n } from "@/lib/i18n";
 import { PhoneInput } from "@/components/phone-input";
 import { Rnd } from "react-rnd";
 import { useBrand } from "@/lib/brand-context";
@@ -53,9 +53,12 @@ async function uploadToBucket(userId: string, file: File, kind: "logo" | "font")
 
 function Settings() {
   const t = useT();
+  const { lang } = useI18n();
   const qc = useQueryClient();
   const brand = useBrand();
   const brandId = brand.id;
+  const brandDisplayName = (lang === "ar" ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug;
+  const LEGACY_NAMES = new Set(["My Abaya Boutique", "متجر عباياتي", ""]);
   const logoInput = useRef<HTMLInputElement>(null);
   const fontInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState<null | "logo" | "font">(null);
@@ -77,7 +80,13 @@ function Settings() {
   });
 
   const [f, setF] = useState<Settings | null>(null);
-  useEffect(() => { if (data) setF(data); }, [data]);
+  useEffect(() => {
+    if (data) {
+      const trimmed = (data.business_name ?? "").trim();
+      const name = LEGACY_NAMES.has(trimmed) ? brandDisplayName : trimmed;
+      setF({ ...data, business_name: name });
+    }
+  }, [data, brandDisplayName]);
 
   if (!f) return <div className="p-8">Loading…</div>;
 
