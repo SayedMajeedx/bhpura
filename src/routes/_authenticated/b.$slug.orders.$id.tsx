@@ -55,7 +55,27 @@ type SavedAddress = {
 
 export const Route = createFileRoute("/_authenticated/b/$slug/orders/$id")({
   component: OrderDetail,
+  errorComponent: OrderErrorBoundary,
+  notFoundComponent: OrderErrorBoundary,
 });
+
+function OrderErrorBoundary({ error }: { error?: Error }) {
+  const { slug } = Route.useParams();
+  return (
+    <div className="p-8 max-w-lg mx-auto">
+      <Card className="p-8 text-center space-y-3">
+        <h2 className="text-xl font-display">Order</h2>
+        <p className="text-muted-foreground">
+          {error?.message || "This order could not be loaded. It may have been deleted."}
+        </p>
+        <Link to="/b/$slug/orders" params={{ slug }} className="text-primary underline">
+          ← Back to orders
+        </Link>
+      </Card>
+    </div>
+  );
+}
+
 
 type Order = any;
 type Item = {
