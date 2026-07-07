@@ -251,9 +251,18 @@ function TeamManagement() {
                         {isAr ? "مدير" : "Admin"}
                       </div>
                     </SelectItem>
+                    {isSuperAdmin && (
+                      <SelectItem value="super_admin">
+                        <div className="flex items-center gap-2">
+                          <Crown className="h-4 w-4" />
+                          {isAr ? "مدير عام" : "Super Admin"}
+                        </div>
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
+
               <p className="text-xs text-muted-foreground">
                 {isAr
                   ? "سيتمكن المستخدم من تسجيل الدخول فوراً. يمكنه تغيير كلمة المرور لاحقاً."
