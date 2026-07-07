@@ -157,7 +157,7 @@ const en: Dict = {
   "inventory.customizations": "Customization add-ons",
   "inventory.newProduct": "New product",
   "inventory.editProduct": "Edit product",
-  "inventory.none": "No products yet. Add your first abaya to get started.",
+  "inventory.none": "No products yet. Add your first product to get started.",
   "inventory.name": "Name",
   "inventory.category": "Category",
   "inventory.categoryPh": "e.g. Everyday, Occasion",

@@ -11,20 +11,22 @@ type Props = {
   variantIds?: string[];
   scope?: "order" | "product" | "inventory";
   limit?: number;
+  brandId?: string;
 };
 
-export function ActivityLogList({ orderId, productId, variantIds, scope = "order", limit = 50 }: Props) {
+export function ActivityLogList({ orderId, productId, variantIds, scope = "order", limit = 50, brandId }: Props) {
   const t = useT();
   const { lang } = useI18n();
   const locale = lang === "ar" ? "ar-BH" : "en-US";
 
   const q = useQuery({
-    queryKey: ["activity_logs", { orderId, productId, variantIds, scope, limit }],
+    queryKey: ["activity_logs", { orderId, productId, variantIds, scope, limit, brandId }],
     queryFn: async () => {
       let query: any = (supabase.from("activity_logs") as any)
         .select("*")
         .order("created_at", { ascending: false })
         .limit(limit);
+      if (brandId) query = query.eq("brand_id", brandId);
       if (orderId) query = query.eq("order_id", orderId);
       else if (productId) query = query.eq("product_id", productId);
       else if (scope === "inventory") {

@@ -106,7 +106,7 @@ function Inventory() {
       )}
 
       <div className="mt-8">
-        <ActivityLogList scope="inventory" />
+        <ActivityLogList scope="inventory" brandId={brandId} />
       </div>
     </div>
   );
