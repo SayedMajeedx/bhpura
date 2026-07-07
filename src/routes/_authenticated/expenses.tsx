@@ -15,17 +15,32 @@ import { useI18n, useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/expenses")({
   beforeLoad: async () => {
-    // Only admins can access expenses
+    // Only admins and super admins can access expenses
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });
 
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, status, email")
       .eq("id", user.id)
       .maybeSingle();
 
-    if (!profile || profile.role !== "admin") {
+    // Defensive: if the profile row can't be read (e.g. RLS/missing row),
+    // let the fixed super admin through by email; otherwise fall back to /dashboard.
+    const email = (user.email || "").toLowerCase();
+    const isFixedSuperAdmin = email === "majeed@hotmail.it";
+
+    if (error && !isFixedSuperAdmin) {
+      throw redirect({ to: "/dashboard" });
+    }
+
+    const role = profile?.role;
+    const status = profile?.status ?? "active";
+    const allowed =
+      isFixedSuperAdmin ||
+      ((role === "admin" || role === "super_admin") && status === "active");
+
+    if (!allowed) {
       throw redirect({ to: "/dashboard" });
     }
   },
@@ -51,12 +66,21 @@ function ExpensesPage() {
   const q = useQuery({
     queryKey: ["expenses"],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("expenses") as any)
-        .select("*")
-        .order("expense_date", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as Expense[];
+      try {
+        const { data, error } = await (supabase.from("expenses") as any)
+          .select("*")
+          .order("expense_date", { ascending: false });
+        if (error) {
+          console.error("[expenses] fetch error:", error);
+          return [] as Expense[];
+        }
+        return (data ?? []) as Expense[];
+      } catch (err) {
+        console.error("[expenses] unexpected fetch error:", err);
+        return [] as Expense[];
+      }
     },
+    retry: false,
   });
 
   const [editing, setEditing] = useState<Expense | null>(null);
