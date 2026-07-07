@@ -31,34 +31,41 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Users, Shield, UserX, Check, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, Shield, UserX, Check, X, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n, useT } from "@/lib/i18n";
-import { useProfile } from "@/lib/profile-context";
+import { useProfile, SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
 import type { Profile, UserRole, UserStatus } from "@/lib/profile-context";
 
 export const Route = createFileRoute("/_authenticated/team")({
   beforeLoad: async () => {
-    // Check if user is admin before loading
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role, status")
+      .select("role, status, email")
       .eq("id", user.id)
       .maybeSingle();
 
-    if (!profile || profile.role !== "admin") {
+    // Allow admin + super_admin. If no profile, allow (first-user fallback).
+    const role = profile?.role;
+    const allowed = !profile ||
+      role === "admin" ||
+      role === "super_admin" ||
+      (profile.email || "").toLowerCase() === SUPER_ADMIN_EMAIL;
+
+    if (!allowed) {
       throw redirect({ to: "/dashboard" });
     }
-    if (profile.status !== "active") {
+    if (profile && profile.status !== "active") {
       await supabase.auth.signOut();
       throw redirect({ to: "/auth" });
     }
   },
   component: TeamManagement,
 });
+
 
 type StaffMember = Profile;
 
@@ -92,7 +99,7 @@ function TeamManagement() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const qc = useQueryClient();
-  const { profile: currentUser } = useProfile();
+  const { profile: currentUser, isSuperAdmin } = useProfile();
 
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -244,9 +251,18 @@ function TeamManagement() {
                         {isAr ? "مدير" : "Admin"}
                       </div>
                     </SelectItem>
+                    {isSuperAdmin && (
+                      <SelectItem value="super_admin">
+                        <div className="flex items-center gap-2">
+                          <Crown className="h-4 w-4" />
+                          {isAr ? "مدير عام" : "Super Admin"}
+                        </div>
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
+
               <p className="text-xs text-muted-foreground">
                 {isAr
                   ? "سيتمكن المستخدم من تسجيل الدخول فوراً. يمكنه تغيير كلمة المرور لاحقاً."
@@ -292,12 +308,19 @@ function TeamManagement() {
                     <td className="p-4">
                       <span
                         className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
-                          member.role === "admin"
+                          member.role === "super_admin"
+                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                            : member.role === "admin"
                             ? "bg-primary/10 text-primary"
                             : "bg-secondary text-secondary-foreground"
                         }`}
                       >
-                        {member.role === "admin" ? (
+                        {member.role === "super_admin" ? (
+                          <>
+                            <Crown className="h-3 w-3" />
+                            {isAr ? "مدير عام" : "Super Admin"}
+                          </>
+                        ) : member.role === "admin" ? (
                           <>
                             <Shield className="h-3 w-3" />
                             {isAr ? "مدير" : "Admin"}
@@ -310,6 +333,7 @@ function TeamManagement() {
                         )}
                       </span>
                     </td>
+
                     <td className="p-4">
                       <span
                         className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
@@ -336,43 +360,56 @@ function TeamManagement() {
                     </td>
                     <td className="p-4 text-end">
                       <div className="flex items-center justify-end gap-1">
-                        {/* Can't deactivate or delete self */}
-                        {member.id !== currentUser?.id && (
-                          <>
-                            <Button variant="ghost" size="icon" onClick={() => openEdit(member)}>
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            {member.status === "active" && (
+                        {(() => {
+                          const isSelf = member.id === currentUser?.id;
+                          const targetIsSuper = member.role === "super_admin" ||
+                            member.email.toLowerCase() === SUPER_ADMIN_EMAIL;
+                          const canManage = !isSelf && (!targetIsSuper || isSuperAdmin);
+                          if (!canManage) {
+                            return (
+                              <span className="text-xs text-muted-foreground">
+                                {isSelf ? (isAr ? "أنت" : "You") : (isAr ? "محمي" : "Protected")}
+                              </span>
+                            );
+                          }
+                          return (
+                            <>
+                              <Button variant="ghost" size="icon" onClick={() => openEdit(member)}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              {member.status === "active" && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  title={isAr ? "إلغاء تفعيل الحساب" : "Deactivate account"}
+                                  onClick={() => handleUpdate(member.id, { status: "inactive" })}
+                                >
+                                  <UserX className="h-4 w-4 text-amber-600" />
+                                </Button>
+                              )}
+                              {member.status === "inactive" && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  title={isAr ? "إعادة تفعيل الحساب" : "Reactivate account"}
+                                  onClick={() => handleUpdate(member.id, { status: "active" })}
+                                >
+                                  <Check className="h-4 w-4 text-emerald-600" />
+                                </Button>
+                              )}
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                title={isAr ? "إلغاء تفعيل الحساب" : "Deactivate account"}
-                                onClick={() => handleUpdate(member.id, { status: "inactive" })}
+                                onClick={() => setDeleteConfirm(member)}
                               >
-                                <UserX className="h-4 w-4 text-amber-600" />
+                                <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
-                            )}
-                            {member.status === "inactive" && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title={isAr ? "إعادة تفعيل الحساب" : "Reactivate account"}
-                                onClick={() => handleUpdate(member.id, { status: "active" })}
-                              >
-                                <Check className="h-4 w-4 text-emerald-600" />
-                              </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setDeleteConfirm(member)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </>
-                        )}
+                            </>
+                          );
+                        })()}
                       </div>
                     </td>
+
                   </tr>
                 ))}
               </tbody>
@@ -419,6 +456,15 @@ function TeamManagement() {
                         {isAr ? "مدير" : "Admin"}
                       </div>
                     </SelectItem>
+                    {(isSuperAdmin || editing.role === "super_admin") && (
+                      <SelectItem value="super_admin">
+                        <div className="flex items-center gap-2">
+                          <Crown className="h-4 w-4" />
+                          {isAr ? "مدير عام" : "Super Admin"}
+                        </div>
+                      </SelectItem>
+                    )}
+
                   </SelectContent>
                 </Select>
               </div>

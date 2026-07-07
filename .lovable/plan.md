@@ -1,59 +1,71 @@
-## Problem
+## Goal
 
-Two issues make the scanner return nothing on a real barcode printed from the app:
+Extend the existing RBAC/Team Management foundation to add a `super_admin` tier (locked to `majeed@hotmail.it`), prepare for future multi-brand tenancy via `brand_id`, and harden the Team page + guards. The existing Team UI, edge function, and profile context are kept and extended (not rewritten).
 
-1. **Scanner decode path is weak for 1D barcodes.** `barcode-scanner.tsx` grabs the full video frame into a canvas and calls `html5-qrcode.scanFile()` on every tick. `scanFile()` is a single-shot decoder tuned for QR codes and full-image scans — with a small CODE128 barcode inside a wide camera frame it almost never triggers. The native `BarcodeDetector` path silently no-ops on iOS Safari (unsupported) and on many Android Chrome builds when it can't lock on. Net result: camera opens, frames stream, nothing decodes.
-2. **Photo fallback fails for the same reason.** A wide phone photo of a small label leaves the barcode as a tiny fraction of the pixels; `scanFile` can't lock on.
+## 1. Database migration
 
-The generated barcode itself is a valid CODE128 (JsBarcode default), but the on-label rendering is thin (width `1.6`, height `50`, `margin 4`) which reduces reliability at typical phone distances.
+Single migration that:
 
-## Fix
+- Drops the current `role` CHECK constraint and adds a new one: `role IN ('super_admin','admin','staff')`.
+- Adds `brand_id uuid NULL` to `profiles` + index (nullable, no FK yet — future `brands` table will add it).
+- Adds `brand_id uuid NULL` to the main tenant-scoped tables (`products`, `product_variants`, `orders`, `customers`, `expenses`, `business_settings`, `activity_logs`, `campaigns/message_templates`) so future isolation is a filter change, not a re-migration. All nullable, no policy change today.
+- Updates helper fns:
+  - `is_admin()` → true for `admin` OR `super_admin` (active).
+  - New `is_super_admin()` → true only for `super_admin` (active).
+- Updates `handle_new_user()`: if `NEW.email = 'majeed@hotmail.it'` → role `super_admin`, status `active`. Otherwise keep existing first-user-becomes-admin logic.
+- Seed/upsert: if a profile row exists for `majeed@hotmail.it`, force `role='super_admin'`, `status='active'`. If the auth user exists but no profile, insert one.
+- RLS additions on `profiles`:
+  - Only `super_admin` can UPDATE another profile's `role` to/from `super_admin` (enforced via trigger since RLS can't diff columns cleanly).
+  - `super_admin` cannot be deleted or deactivated by non-super_admin (trigger-enforced).
 
-### 1. Replace the custom decode loop with `Html5Qrcode.start()`
+## 2. Edge function `user-management`
 
-`src/components/barcode-scanner.tsx`:
+- Extend role validation to accept `super_admin` only when caller is `super_admin`.
+- `create`: staff/admin allowed for admins; only super_admin can create another super_admin (in practice unused — majeed is fixed).
+- `update`: block non-super_admin from changing a super_admin's role/status; block downgrading the fixed super_admin email.
+- `delete`: block deleting `majeed@hotmail.it` or any super_admin unless caller is super_admin (and not self).
+- `list`: unchanged, returns everyone; UI badges super_admin distinctly.
+- Defensive: wrap role/brand_id reads with `?? null` so missing columns don't 500.
 
-- Drop the manual `<video>` + `canvas.drawImage` + `scanFile` loop.
-- Use html5-qrcode's built-in continuous scanner:
-  ```ts
-  await decoder.start(
-    { deviceId: { exact: <id from streamRef track> } },  // reuse the pre-warmed stream's device
-    {
-      fps: 12,
-      qrbox: (w, h) => ({ width: Math.floor(w * 0.85), height: Math.floor(h * 0.35) }), // wide, short — matches 1D barcodes
-      aspectRatio: 1,
-      disableFlip: false,
-      formatsToSupport: SUPPORTED_FORMATS,
-      experimentalFeatures: { useBarCodeDetectorIfSupported: true },
-    },
-    (decodedText) => { onDetected(decodedText.trim()); stopCamera(); onOpenChange(false); },
-    () => { /* per-frame no-match: ignore */ },
-  );
-  ```
-- Render the html5-qrcode container (`<div id="barcode-scanner-decode-region">`) as the visible viewport instead of hidden, and keep the corner-mask overlay on top of it.
-- Stop the pre-warmed probe stream from the click handler before `start()` runs (html5-qrcode opens its own stream from the deviceId). This avoids `NotReadableError: Device in use`.
-- Keep the existing `handleCameraError` mapping and Arabic/English messages.
+## 3. Profile context (`src/lib/profile-context.tsx`)
 
-### 2. Improve the photo-upload fallback
+- Extend `UserRole` union: `'super_admin' | 'admin' | 'staff'`.
+- Add `brandId: string | null` to `Profile`.
+- Add derived flags: `isSuperAdmin`, keep `isAdmin` true for both admin + super_admin, `canViewFinancials` stays admin+.
+- Fallback profile logic unchanged; if fetched email === `majeed@hotmail.it`, force `isSuperAdmin = true` client-side as a defensive default.
 
-- Before calling `scanFile`, downscale/crop the uploaded image so the long edge is ≤ 1600px (html5-qrcode struggles with 12MP originals).
-- Try `scanFile(file, true)` first (with verbose/preprocessing), then a second pass with `false` if it throws.
-- Keep the bilingual "couldn't read" message.
+## 4. Team Management page (`src/routes/_authenticated/team.tsx`)
 
-### 3. Make printed barcodes more scannable
+Additive changes only:
 
-`src/components/barcode-label.tsx`:
+- Route `beforeLoad`: allow `admin` OR `super_admin`.
+- Add "Super Admin" badge row (crown icon) — non-editable, non-deletable in the UI for anyone except a super_admin viewer.
+- Role select in Add/Edit dialogs: show `Super Admin` option only when current viewer `isSuperAdmin`.
+- Actions menu: hide Edit/Delete/Suspend on super_admin rows unless viewer is super_admin; never allow deleting/suspending self.
+- Full bilingual pass on any new strings; RTL flips already handled by root `dir` attribute.
+- Loading skeleton + try/catch already in place; add graceful "column missing" fallbacks (treat as null).
 
-- Bump `PrintableLabel` and `printLabels` JsBarcode options to `width: 2.2`, `height: 70`, `margin: 8` (quiet zone matters most). Keep CODE128.
-- No API change; existing call sites stay the same.
+## 5. Route + dashboard guards
 
-### 4. Keep everything else as-is
+- `app-shell.tsx`: Team Management nav item visible for both `admin` and `super_admin` (already gated on `isAdmin` which will now cover both).
+- Dashboard financial widgets already use `canViewFinancials` — verify staff sees hidden state (no change needed if flag correct).
+- Force logout on inactive: existing `profile-context` effect + `_authenticated/route.tsx` gate already do this; add a bilingual toast right before signOut so the user sees the reason.
 
-- `openBarcodeScanner` click handler in `orders.$id.tsx`, `handleScanned` lookup by `barcode`/`sku`, and the dialog UI stay unchanged.
+## 6. Multi-tenancy readiness (no behavior change today)
+
+- `brand_id` columns added but not enforced in RLS.
+- Document (comment in migration) that future brand isolation = add `brands` table + tighten policies to `brand_id = current_user_brand()`; today all rows have `brand_id IS NULL` = shared/default brand.
+
+## Technical notes
+
+- Migration must include GRANTs re-issued only if new tables were created (none here — only ALTERs), so no GRANT block needed.
+- The fixed super_admin email `majeed@hotmail.it` is enforced in 3 layers: DB trigger on signup, seed upsert, edge function guard.
+- No changes to barcode, orders, inventory, or any other module.
 
 ## Files touched
 
-- `src/components/barcode-scanner.tsx` — rewrite decode strategy (Html5Qrcode.start) + stronger file fallback.
-- `src/components/barcode-label.tsx` — thicker/taller bars + larger quiet zone for both on-screen `BarcodeSvg` (only inside `PrintableLabel`) and `printLabels`.
-
-No DB, no route, no other component changes.
+- `supabase/migrations/<new>.sql` (new)
+- `supabase/functions/user-management/index.ts`
+- `src/lib/profile-context.tsx`
+- `src/routes/_authenticated/team.tsx`
+- (verify only) `src/components/app-shell.tsx`, `src/routes/_authenticated/dashboard.tsx`

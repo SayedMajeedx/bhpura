@@ -17,6 +17,7 @@ export type Database = {
       activity_logs: {
         Row: {
           action: string
+          brand_id: string | null
           created_at: string
           id: string
           message_ar: string
@@ -29,6 +30,7 @@ export type Database = {
         }
         Insert: {
           action: string
+          brand_id?: string | null
           created_at?: string
           id?: string
           message_ar: string
@@ -41,6 +43,7 @@ export type Database = {
         }
         Update: {
           action?: string
+          brand_id?: string | null
           created_at?: string
           id?: string
           message_ar?: string
@@ -79,6 +82,7 @@ export type Database = {
         Row: {
           address: string | null
           background_color: string
+          brand_id: string | null
           business_name: string
           created_at: string
           currency: string
@@ -105,6 +109,7 @@ export type Database = {
         Insert: {
           address?: string | null
           background_color?: string
+          brand_id?: string | null
           business_name?: string
           created_at?: string
           currency?: string
@@ -131,6 +136,7 @@ export type Database = {
         Update: {
           address?: string | null
           background_color?: string
+          brand_id?: string | null
           business_name?: string
           created_at?: string
           currency?: string
@@ -209,6 +215,7 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
+          brand_id: string | null
           city: string | null
           created_at: string
           email: string | null
@@ -225,6 +232,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          brand_id?: string | null
           city?: string | null
           created_at?: string
           email?: string | null
@@ -241,6 +249,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          brand_id?: string | null
           city?: string | null
           created_at?: string
           email?: string | null
@@ -284,6 +293,7 @@ export type Database = {
       expenses: {
         Row: {
           amount: number
+          brand_id: string | null
           category: string
           created_at: string
           currency: string
@@ -296,6 +306,7 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          brand_id?: string | null
           category: string
           created_at?: string
           currency?: string
@@ -308,6 +319,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          brand_id?: string | null
           category?: string
           created_at?: string
           currency?: string
@@ -323,6 +335,7 @@ export type Database = {
       message_templates: {
         Row: {
           body: string
+          brand_id: string | null
           channel: string
           created_at: string
           id: string
@@ -334,6 +347,7 @@ export type Database = {
         }
         Insert: {
           body: string
+          brand_id?: string | null
           channel?: string
           created_at?: string
           id?: string
@@ -345,6 +359,7 @@ export type Database = {
         }
         Update: {
           body?: string
+          brand_id?: string | null
           channel?: string
           created_at?: string
           id?: string
@@ -429,6 +444,7 @@ export type Database = {
       orders: {
         Row: {
           advance_paid: number
+          brand_id: string | null
           created_at: string
           currency: string
           customer_id: string | null
@@ -453,6 +469,7 @@ export type Database = {
         }
         Insert: {
           advance_paid?: number
+          brand_id?: string | null
           created_at?: string
           currency?: string
           customer_id?: string | null
@@ -477,6 +494,7 @@ export type Database = {
         }
         Update: {
           advance_paid?: number
+          brand_id?: string | null
           created_at?: string
           currency?: string
           customer_id?: string | null
@@ -519,6 +537,7 @@ export type Database = {
       product_variants: {
         Row: {
           barcode: string | null
+          brand_id: string | null
           color: string | null
           cost_price: number
           created_at: string
@@ -536,6 +555,7 @@ export type Database = {
         }
         Insert: {
           barcode?: string | null
+          brand_id?: string | null
           color?: string | null
           cost_price?: number
           created_at?: string
@@ -553,6 +573,7 @@ export type Database = {
         }
         Update: {
           barcode?: string | null
+          brand_id?: string | null
           color?: string | null
           cost_price?: number
           created_at?: string
@@ -580,6 +601,7 @@ export type Database = {
       }
       products: {
         Row: {
+          brand_id: string | null
           category: string | null
           created_at: string
           description: string | null
@@ -590,6 +612,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          brand_id?: string | null
           category?: string | null
           created_at?: string
           description?: string | null
@@ -600,6 +623,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          brand_id?: string | null
           category?: string | null
           created_at?: string
           description?: string | null
@@ -611,11 +635,47 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          brand_id: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          role: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          brand_id?: string | null
+          created_at?: string
+          email: string
+          id: string
+          name?: string | null
+          role?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          brand_id?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          role?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      is_active: { Args: never; Returns: boolean }
+      is_admin: { Args: never; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
       sync_order_stock: { Args: { p_order_id: string }; Returns: undefined }
     }
     Enums: {

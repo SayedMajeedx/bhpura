@@ -14,7 +14,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { t, lang, setLang } = useI18n();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { isAdmin, isActive, isLoading, signOutAndRedirect } = useProfile();
+  const { profile, isAdmin, isLoading, signOutAndRedirect } = useProfile();
 
   // close drawer when route changes
   useEffect(() => { setMobileOpen(false); }, [pathname]);
@@ -23,13 +23,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // (not for users without profiles - they get treated as active admin)
   useEffect(() => {
     if (isLoading) return;
-    // Only force logout if user has a profile that is explicitly inactive
     if (profile && profile.status === "inactive") {
       (async () => {
         await signOutAndRedirect();
       })();
     }
   }, [isLoading, profile, signOutAndRedirect]);
+
 
   // Build nav items based on role
   const nav = useMemo(() => {

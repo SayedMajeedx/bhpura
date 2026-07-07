@@ -60,15 +60,17 @@ Deno.serve(async (req: Request) => {
     }
 
     // All other actions require admin role
-    const { data: callerProfile, error: profileError } = await supabase
+    const { data: callerProfile } = await supabase
       .from("profiles")
-      .select("role, status")
+      .select("role, status, email")
       .eq("id", user.id)
       .maybeSingle();
 
-    // For non-ensure-profile actions, check admin status
     // If no profile exists, treat user as admin (first user fallback)
-    const isAdmin = !callerProfile || callerProfile.role === "admin";
+    const callerRole: string = callerProfile?.role || "admin";
+    const isAdmin = callerRole === "admin" || callerRole === "super_admin";
+    const isSuperAdmin = callerRole === "super_admin" ||
+      (callerProfile?.email || "").toLowerCase() === "majeed@hotmail.it";
     const isActive = !callerProfile || callerProfile.status === "active";
 
     if (!isAdmin) {
@@ -85,6 +87,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    const callerCtx = { userId: user.id, isSuperAdmin };
+
     // Handle different actions
     switch (action) {
       case "list": {
@@ -93,17 +97,17 @@ Deno.serve(async (req: Request) => {
 
       case "create": {
         const body = await req.json();
-        return await handleCreate(supabase, body);
+        return await handleCreate(supabase, body, callerCtx);
       }
 
       case "update": {
         const body = await req.json();
-        return await handleUpdate(supabase, body);
+        return await handleUpdate(supabase, body, callerCtx);
       }
 
       case "delete": {
         const body = await req.json();
-        return await handleDelete(supabase, body);
+        return await handleDelete(supabase, body, callerCtx);
       }
 
       default:
@@ -113,6 +117,7 @@ Deno.serve(async (req: Request) => {
         );
     }
   } catch (err) {
+
     console.error("[user-management] Error:", err);
     return new Response(
       JSON.stringify({ error: err instanceof Error ? err.message : "Internal server error" }),
@@ -198,7 +203,7 @@ async function handleList(supabase: any) {
   );
 }
 
-async function handleCreate(supabase: any, body: any) {
+async function handleCreate(supabase: any, body: any, ctx: { userId: string; isSuperAdmin: boolean }) {
   const { email, name, role, password } = body;
 
   if (!email || !password) {
@@ -209,21 +214,19 @@ async function handleCreate(supabase: any, body: any) {
   }
 
   const userRole = role || "staff";
-  if (!["admin", "staff"].includes(userRole)) {
+  const validRoles = ctx.isSuperAdmin ? ["super_admin", "admin", "staff"] : ["admin", "staff"];
+  if (!validRoles.includes(userRole)) {
     return new Response(
-      JSON.stringify({ error: "Invalid role. Must be 'admin' or 'staff'" }),
+      JSON.stringify({ error: `Invalid role. Allowed: ${validRoles.join(", ")}` }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  // Create user in auth
-  const { data: authData, error: authError } = await supabase.auth.signUp({
+  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email,
     password,
-    options: {
-      email_confirm: false,
-      user_metadata: { name: name || email.split("@")[0] },
-    },
+    email_confirm: true,
+    user_metadata: { name: name || email.split("@")[0] },
   });
 
   if (authError) {
@@ -241,17 +244,15 @@ async function handleCreate(supabase: any, body: any) {
     );
   }
 
-  // Wait for trigger to create profile, then update role if not default
-  await new Promise((r) => setTimeout(r, 500));
+  // Wait for trigger to create profile, then set desired role
+  await new Promise((r) => setTimeout(r, 400));
 
-  // Update profile with correct role if needed
   const { error: profileUpdateError } = await supabase
     .from("profiles")
     .update({ name: name || email.split("@")[0], role: userRole })
     .eq("id", userId);
 
   if (profileUpdateError) {
-    // Still return success but log the issue
     console.error("[user-management] Profile update error:", profileUpdateError);
   }
 
@@ -270,21 +271,40 @@ async function handleCreate(supabase: any, body: any) {
   );
 }
 
-async function handleUpdate(supabase: any, body: any) {
+async function handleUpdate(supabase: any, body: any, ctx: { userId: string; isSuperAdmin: boolean }) {
   const { userId, role, status, name } = body;
 
   if (!userId) {
     return new Response(
-    JSON.stringify({ error: "userId is required" }),
+      JSON.stringify({ error: "userId is required" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
+  // Look up target to enforce super admin protection
+  const { data: target } = await supabase
+    .from("profiles")
+    .select("role, email")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const targetIsSuperAdmin = target?.role === "super_admin" ||
+    (target?.email || "").toLowerCase() === "majeed@hotmail.it";
+
+  if (targetIsSuperAdmin && !ctx.isSuperAdmin) {
+    return new Response(
+      JSON.stringify({ error: "Only a super admin can modify a super admin" }),
+      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const validRoles = ctx.isSuperAdmin ? ["super_admin", "admin", "staff"] : ["admin", "staff"];
+
   const updates: Record<string, any> = {};
   if (role !== undefined) {
-    if (!["admin", "staff"].includes(role)) {
+    if (!validRoles.includes(role)) {
       return new Response(
-        JSON.stringify({ error: "Invalid role. Must be 'admin' or 'staff'" }),
+        JSON.stringify({ error: `Invalid role. Allowed: ${validRoles.join(", ")}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -322,9 +342,8 @@ async function handleUpdate(supabase: any, body: any) {
     );
   }
 
-  // If deactivating, sign out all sessions for that user (supabase.auth.admin.signOut)
   if (status === "inactive") {
-    await supabase.auth.admin.signOut(userId, "global");
+    try { await supabase.auth.admin.signOut(userId, "global"); } catch (_) {}
   }
 
   return new Response(
@@ -333,7 +352,7 @@ async function handleUpdate(supabase: any, body: any) {
   );
 }
 
-async function handleDelete(supabase: any, body: any) {
+async function handleDelete(supabase: any, body: any, ctx: { userId: string; isSuperAdmin: boolean }) {
   const { userId } = body;
 
   if (!userId) {
@@ -343,7 +362,33 @@ async function handleDelete(supabase: any, body: any) {
     );
   }
 
-  // Delete from auth.users (cascade will delete profile)
+  if (userId === ctx.userId) {
+    return new Response(
+      JSON.stringify({ error: "You cannot delete your own account" }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const { data: target } = await supabase
+    .from("profiles")
+    .select("role, email")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const targetEmail = (target?.email || "").toLowerCase();
+  if (targetEmail === "majeed@hotmail.it") {
+    return new Response(
+      JSON.stringify({ error: "The primary super admin cannot be deleted" }),
+      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  if (target?.role === "super_admin" && !ctx.isSuperAdmin) {
+    return new Response(
+      JSON.stringify({ error: "Only a super admin can delete a super admin" }),
+      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   const { error } = await supabase.auth.admin.deleteUser(userId);
 
   if (error) {
@@ -358,3 +403,4 @@ async function handleDelete(supabase: any, body: any) {
     { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 }
+
