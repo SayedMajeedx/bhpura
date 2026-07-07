@@ -6,6 +6,7 @@ import { Package, Users, ReceiptText, TrendingUp, CalendarDays, Trophy, Wallet, 
 import { formatMoney } from "@/lib/format";
 import { useI18n, useT } from "@/lib/i18n";
 import { useProfile } from "@/lib/profile-context";
+import { useBrand } from "@/lib/brand-context";
 
 export const Route = createFileRoute("/_authenticated/b/$slug/dashboard")({
   component: Dashboard,
@@ -25,21 +26,24 @@ function Dashboard() {
   const { lang } = useI18n();
   const { canViewFinancials } = useProfile();
   const { slug } = Route.useParams();
+  const brand = useBrand();
+  const brandId = brand.id;
   const locale = lang === "ar" ? "ar-BH" : "en-US";
 
   const { data } = useQuery({
-    queryKey: ["dashboard-stats"],
+    queryKey: ["dashboard-stats", brandId],
     queryFn: async () => {
       const [products, customers, orders, variants, items, expenses] = await Promise.all([
-        supabase.from("products").select("id", { count: "exact", head: true }),
-        supabase.from("customers").select("id", { count: "exact", head: true }),
+        supabase.from("products").select("id", { count: "exact", head: true }).eq("brand_id", brandId),
+        supabase.from("customers").select("id", { count: "exact", head: true }).eq("brand_id", brandId),
         supabase
           .from("orders")
           .select("total, currency, status, created_at, order_date, invoice_number, id, customers(name)")
+          .eq("brand_id", brandId)
           .order("created_at", { ascending: false }),
-        supabase.from("product_variants").select("stock"),
-        supabase.from("order_items").select("description, quantity"),
-        (supabase.from("expenses") as any).select("amount, expense_date"),
+        supabase.from("product_variants").select("stock").eq("brand_id", brandId),
+        supabase.from("order_items").select("description, quantity").eq("brand_id", brandId),
+        (supabase.from("expenses") as any).select("amount, expense_date").eq("brand_id", brandId),
       ]);
 
       const monthStart = startOfMonthISO();

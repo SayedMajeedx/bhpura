@@ -13,6 +13,7 @@ import { Upload } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { PhoneInput } from "@/components/phone-input";
 import { Rnd } from "react-rnd";
+import { useBrand } from "@/lib/brand-context";
 
 export const Route = createFileRoute("/_authenticated/b/$slug/settings")({
   component: Settings,
@@ -53,19 +54,21 @@ async function uploadToBucket(userId: string, file: File, kind: "logo" | "font")
 function Settings() {
   const t = useT();
   const qc = useQueryClient();
+  const brand = useBrand();
+  const brandId = brand.id;
   const logoInput = useRef<HTMLInputElement>(null);
   const fontInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState<null | "logo" | "font">(null);
 
   const { data } = useQuery({
-    queryKey: ["business-settings"],
+    queryKey: ["business-settings", brandId],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data, error } = await supabase.from("business_settings").select("*").eq("user_id", user.id).maybeSingle();
+      const { data, error } = await supabase.from("business_settings").select("*").eq("brand_id", brandId).maybeSingle();
       if (error) throw error;
       if (!data) {
-        const { data: created, error: e2 } = await (supabase.from("business_settings") as any).insert({ user_id: user.id }).select().single();
+        const { data: created, error: e2 } = await (supabase.from("business_settings") as any).insert({ user_id: user.id, brand_id: brandId }).select().single();
         if (e2) throw e2;
         return created as Settings;
       }
@@ -86,7 +89,7 @@ function Settings() {
       font_family: f.font_family, font_url: f.font_url, font_size: f.font_size,
       text_color: f.text_color, background_color: f.background_color, logo_size: f.logo_size,
       logo_x: f.logo_x, logo_y: f.logo_y, logo_width: f.logo_width, logo_height: f.logo_height,
-    }).eq("user_id", f.user_id);
+    }).eq("brand_id", brandId);
     if (error) toast.error(error.message);
     else { toast.success("Saved"); qc.invalidateQueries({ queryKey: ["business-settings"] }); }
   };

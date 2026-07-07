@@ -12,6 +12,7 @@ import { Plus, Pencil, Trash2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useI18n, useT } from "@/lib/i18n";
+import { useBrand } from "@/lib/brand-context";
 
 export const Route = createFileRoute("/_authenticated/b/$slug/expenses")({
   beforeLoad: async ({ params }) => {
@@ -54,13 +55,16 @@ function ExpensesPage() {
   const { lang } = useI18n();
   const locale = lang === "ar" ? "ar-BH" : "en-US";
   const qc = useQueryClient();
+  const brand = useBrand();
+  const brandId = brand.id;
 
   const q = useQuery({
-    queryKey: ["expenses"],
+    queryKey: ["expenses", brandId],
     queryFn: async () => {
       try {
         const { data, error } = await (supabase.from("expenses") as any)
           .select("*")
+          .eq("brand_id", brandId)
           .order("expense_date", { ascending: false });
         if (error) {
           console.error("[expenses] fetch error:", error);

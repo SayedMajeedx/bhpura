@@ -24,6 +24,7 @@ import {
 import { Check, MessageCircle, Search, Megaphone, Save, Trash2, Plus } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
+import { useBrand } from "@/lib/brand-context";
 
 export const Route = createFileRoute("/_authenticated/b/$slug/campaigns")({
   component: CampaignsPage,
@@ -40,6 +41,8 @@ function CampaignsPage() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const qc = useQueryClient();
+  const brand = useBrand();
+  const brandId = brand.id;
 
   const [message, setMessage] = useState(isAr ? DEFAULT_AR : DEFAULT_EN);
   const [selectedId, setSelectedId] = useState<string>("");
@@ -51,11 +54,12 @@ function CampaignsPage() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const templatesQ = useQuery({
-    queryKey: ["campaign-templates"],
+    queryKey: ["campaign-templates", brandId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("message_templates")
         .select("id, name, body")
+        .eq("brand_id", brandId)
         .eq("channel", CHANNEL)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -64,11 +68,12 @@ function CampaignsPage() {
   });
 
   const customersQ = useQuery({
-    queryKey: ["campaigns-customers"],
+    queryKey: ["campaigns-customers", brandId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("customers")
         .select("id, name, phone")
+        .eq("brand_id", brandId)
         .order("name");
       if (error) throw error;
       return (data ?? []) as Customer[];
@@ -76,9 +81,9 @@ function CampaignsPage() {
   });
 
   const ordersQ = useQuery({
-    queryKey: ["campaigns-order-counts"],
+    queryKey: ["campaigns-order-counts", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("orders").select("customer_id");
+      const { data, error } = await supabase.from("orders").select("customer_id").eq("brand_id", brandId);
       if (error) throw error;
       const counts: Record<string, number> = {};
       (data ?? []).forEach((o: { customer_id: string | null }) => {
@@ -89,11 +94,12 @@ function CampaignsPage() {
   });
 
   const businessQ = useQuery({
-    queryKey: ["campaigns-business"],
+    queryKey: ["campaigns-business", brandId],
     queryFn: async () => {
       const { data } = await supabase
         .from("business_settings")
         .select("business_name")
+        .eq("brand_id", brandId)
         .maybeSingle();
       return data?.business_name ?? "";
     },

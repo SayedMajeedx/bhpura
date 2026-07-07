@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { BAHRAIN_REGIONS, regionLabel, formatAddressLine, type StructuredAddress } from "@/lib/bahrain-regions";
 import { PhoneInput } from "@/components/phone-input";
+import { useBrand } from "@/lib/brand-context";
 
 export const Route = createFileRoute("/_authenticated/b/$slug/customers")({
   component: CustomersPage,
@@ -48,22 +49,24 @@ function CustomersPage() {
   const t = useT();
   const { lang } = useI18n();
   const qc = useQueryClient();
+  const brand = useBrand();
+  const brandId = brand.id;
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
 
   const { data } = useQuery({
-    queryKey: ["customers"],
+    queryKey: ["customers", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("customers").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("customers").select("*").eq("brand_id", brandId).order("created_at", { ascending: false });
       if (error) throw error;
       return data as Customer[];
     },
   });
 
   const addressesQ = useQuery({
-    queryKey: ["customer_addresses"],
+    queryKey: ["customer_addresses", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("customer_addresses").select("*");
+      const { data, error } = await supabase.from("customer_addresses").select("*").eq("brand_id", brandId);
       if (error) throw error;
       return data as Address[];
     },

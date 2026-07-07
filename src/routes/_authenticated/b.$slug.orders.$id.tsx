@@ -21,6 +21,7 @@ import { logActivityBatch } from "@/lib/activity-log";
 import { ActivityLogList } from "@/components/activity-log-list";
 import { BarcodeScanner } from "@/components/barcode-scanner";
 import { PhoneInput } from "@/components/phone-input";
+import { useBrand } from "@/lib/brand-context";
 
 function formatDeliveryAddress(
   c: { region?: string | null; road?: string | null; house?: string | null; flat?: string | null; address?: string | null; city?: string | null } | null | undefined,
@@ -70,6 +71,8 @@ function OrderDetail() {
   const { lang } = useI18n();
   const { id } = Route.useParams();
   const qc = useQueryClient();
+  const brand = useBrand();
+  const brandId = brand.id;
 
   const orderQ = useQuery({
     queryKey: ["order", id],
@@ -84,35 +87,33 @@ function OrderDetail() {
     },
   });
   const productsQ = useQuery({
-    queryKey: ["products"],
-    queryFn: async () => (await supabase.from("products").select("*")).data ?? [],
+    queryKey: ["products", brandId],
+    queryFn: async () => (await supabase.from("products").select("*").eq("brand_id", brandId)).data ?? [],
   });
   const variantsQ = useQuery({
-    queryKey: ["variants"],
-    queryFn: async () => (await supabase.from("product_variants").select("*")).data ?? [],
+    queryKey: ["variants", brandId],
+    queryFn: async () => (await supabase.from("product_variants").select("*").eq("brand_id", brandId)).data ?? [],
   });
   const customersQ = useQuery({
-    queryKey: ["customers"],
-    queryFn: async () => (await supabase.from("customers").select("*").order("name")).data ?? [],
+    queryKey: ["customers", brandId],
+    queryFn: async () => (await supabase.from("customers").select("*").eq("brand_id", brandId).order("name")).data ?? [],
   });
   const addressesQ = useQuery({
-    queryKey: ["customer_addresses"],
+    queryKey: ["customer_addresses", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("customer_addresses").select("*");
+      const { data, error } = await supabase.from("customer_addresses").select("*").eq("brand_id", brandId);
       if (error) throw error;
       return (data ?? []) as SavedAddress[];
     },
   });
   const customQ = useQuery({
-    queryKey: ["customizations"],
-    queryFn: async () => (await supabase.from("customization_options").select("*").order("name")).data ?? [],
+    queryKey: ["customizations", brandId],
+    queryFn: async () => (await supabase.from("customization_options").select("*").eq("brand_id", brandId).order("name")).data ?? [],
   });
   const settingsQ = useQuery({
-    queryKey: ["business-settings"],
+    queryKey: ["business-settings", brandId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-      const { data } = await supabase.from("business_settings").select("*").eq("user_id", user.id).maybeSingle();
+      const { data } = await supabase.from("business_settings").select("*").eq("brand_id", brandId).maybeSingle();
       return data;
     },
   });
@@ -1227,10 +1228,12 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
     notes: order?.notes ?? "",
   }), [order, totals, settings, currency]);
 
+  const brand = useBrand();
+  const brandId = brand.id;
   const templatesQ = useQuery({
-    queryKey: ["message-templates"],
+    queryKey: ["message-templates", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("message_templates").select("*").order("created_at");
+      const { data, error } = await supabase.from("message_templates").select("*").eq("brand_id", brandId).order("created_at");
       if (error) throw error;
       return (data ?? []) as Tpl[];
     },
