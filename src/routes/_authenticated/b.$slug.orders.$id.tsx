@@ -103,7 +103,9 @@ function OrderDetail() {
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
-      return data as Order | null;
+      if (!data) throw new Error("Order not found. It may have been deleted.");
+      return data as Order;
+
     },
   });
 
