@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { BAHRAIN_REGIONS, regionLabel, formatAddressLine, type StructuredAddress } from "@/lib/bahrain-regions";
 import { PhoneInput } from "@/components/phone-input";
+import { useBrand } from "@/lib/brand-context";
 
 export const Route = createFileRoute("/_authenticated/b/$slug/customers")({
   component: CustomersPage,

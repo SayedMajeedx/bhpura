@@ -15,6 +15,7 @@ import { useT, useI18n } from "@/lib/i18n";
 import { ActivityLogList } from "@/components/activity-log-list";
 import { BarcodeSvg, PrintLabelButton, printLabels, type LabelData } from "@/components/barcode-label";
 import { useProfile } from "@/lib/profile-context";
+import { useBrand } from "@/lib/brand-context";
 
 export const Route = createFileRoute("/_authenticated/b/$slug/inventory")({
   component: Inventory,
@@ -31,39 +32,41 @@ type Customization = { id: string; name: string; price_delta: number };
 function Inventory() {
   const t = useT();
   const qc = useQueryClient();
+  const brand = useBrand();
+  const brandId = brand.id;
   const [tab, setTab] = useState<"products" | "customizations">("products");
 
   const products = useQuery({
-    queryKey: ["products"],
+    queryKey: ["products", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("products").select("*").eq("brand_id", brandId).order("created_at", { ascending: false });
       if (error) throw error;
       return data as Product[];
     },
   });
 
   const variants = useQuery({
-    queryKey: ["variants"],
+    queryKey: ["variants", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("product_variants").select("*").order("created_at");
+      const { data, error } = await supabase.from("product_variants").select("*").eq("brand_id", brandId).order("created_at");
       if (error) throw error;
       return data as Variant[];
     },
   });
 
   const customizations = useQuery({
-    queryKey: ["customizations"],
+    queryKey: ["customizations", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("customization_options").select("*").order("name");
+      const { data, error } = await supabase.from("customization_options").select("*").eq("brand_id", brandId).order("name");
       if (error) throw error;
       return data as Customization[];
     },
   });
 
   const businessName = useQuery({
-    queryKey: ["business-name"],
+    queryKey: ["business-name", brandId],
     queryFn: async () => {
-      const { data } = await supabase.from("business_settings").select("business_name").maybeSingle();
+      const { data } = await supabase.from("business_settings").select("business_name").eq("brand_id", brandId).maybeSingle();
       return data?.business_name ?? null;
     },
   });
