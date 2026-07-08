@@ -20,7 +20,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, LogOut, Search } from "lucide-react";
+import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/store/$slug")({
@@ -226,7 +226,7 @@ function WhatsAppFab() {
 }
 
 function StoreHeader() {
-  const { brand, settings, lang, setLang, t, cartCount, session, signOut } = useStorefront();
+  const { brand, settings, lang, setLang, t, cartCount, session } = useStorefront();
   const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
   const align = settings.logo_align ?? "left";
   const logoSize = settings.logo_size || 40;
@@ -291,9 +291,11 @@ function StoreHeader() {
             </Button>
 
             {session ? (
-              <Button variant="ghost" size="sm" className="gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }} onClick={() => signOut()} title={session.user?.email ?? ""}>
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline max-w-[120px] truncate">{session.user?.email ?? t("خروج", "Sign out")}</span>
+              <Button asChild variant="ghost" size="sm" className="gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
+                <Link to="/store/$slug/account" params={{ slug: brand.slug }} title={session.user?.email ?? ""}>
+                  <User className="h-4 w-4" />
+                  <span className="hidden sm:inline max-w-[120px] truncate">{t("حسابي", "My account")}</span>
+                </Link>
               </Button>
             ) : (
               <Button asChild variant="ghost" size="sm" className="gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>

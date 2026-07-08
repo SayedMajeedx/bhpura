@@ -29,6 +29,7 @@ import { Route as StoreSlugIndexRouteImport } from './routes/store.$slug.index'
 import { Route as StoreSlugSearchRouteImport } from './routes/store.$slug.search'
 import { Route as StoreSlugCheckoutRouteImport } from './routes/store.$slug.checkout'
 import { Route as StoreSlugAuthRouteImport } from './routes/store.$slug.auth'
+import { Route as StoreSlugAccountRouteImport } from './routes/store.$slug.account'
 import { Route as AuthenticatedBSlugRouteRouteImport } from './routes/_authenticated/b.$slug.route'
 import { Route as StoreSlugThankYouOrderIdRouteImport } from './routes/store.$slug.thank-you.$orderId'
 import { Route as StoreSlugProductIdRouteImport } from './routes/store.$slug.product.$id'
@@ -145,6 +146,11 @@ const StoreSlugAuthRoute = StoreSlugAuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => StoreSlugRouteRoute,
 } as any)
+const StoreSlugAccountRoute = StoreSlugAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => StoreSlugRouteRoute,
+} as any)
 const AuthenticatedBSlugRouteRoute = AuthenticatedBSlugRouteRouteImport.update({
   id: '/b/$slug',
   path: '/b/$slug',
@@ -254,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/team': typeof AuthenticatedTeamRoute
   '/invoice/$id': typeof InvoiceIdRoute
   '/b/$slug': typeof AuthenticatedBSlugRouteRouteWithChildren
+  '/store/$slug/account': typeof StoreSlugAccountRoute
   '/store/$slug/auth': typeof StoreSlugAuthRoute
   '/store/$slug/checkout': typeof StoreSlugCheckoutRoute
   '/store/$slug/search': typeof StoreSlugSearchRoute
@@ -290,6 +297,7 @@ export interface FileRoutesByTo {
   '/team': typeof AuthenticatedTeamRoute
   '/invoice/$id': typeof InvoiceIdRoute
   '/b/$slug': typeof AuthenticatedBSlugRouteRouteWithChildren
+  '/store/$slug/account': typeof StoreSlugAccountRoute
   '/store/$slug/auth': typeof StoreSlugAuthRoute
   '/store/$slug/checkout': typeof StoreSlugCheckoutRoute
   '/store/$slug/search': typeof StoreSlugSearchRoute
@@ -329,6 +337,7 @@ export interface FileRoutesById {
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/invoice/$id': typeof InvoiceIdRoute
   '/_authenticated/b/$slug': typeof AuthenticatedBSlugRouteRouteWithChildren
+  '/store/$slug/account': typeof StoreSlugAccountRoute
   '/store/$slug/auth': typeof StoreSlugAuthRoute
   '/store/$slug/checkout': typeof StoreSlugCheckoutRoute
   '/store/$slug/search': typeof StoreSlugSearchRoute
@@ -368,6 +377,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/invoice/$id'
     | '/b/$slug'
+    | '/store/$slug/account'
     | '/store/$slug/auth'
     | '/store/$slug/checkout'
     | '/store/$slug/search'
@@ -404,6 +414,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/invoice/$id'
     | '/b/$slug'
+    | '/store/$slug/account'
     | '/store/$slug/auth'
     | '/store/$slug/checkout'
     | '/store/$slug/search'
@@ -442,6 +453,7 @@ export interface FileRouteTypes {
     | '/_authenticated/team'
     | '/invoice/$id'
     | '/_authenticated/b/$slug'
+    | '/store/$slug/account'
     | '/store/$slug/auth'
     | '/store/$slug/checkout'
     | '/store/$slug/search'
@@ -613,6 +625,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/store/$slug/auth'
       preLoaderRoute: typeof StoreSlugAuthRouteImport
+      parentRoute: typeof StoreSlugRouteRoute
+    }
+    '/store/$slug/account': {
+      id: '/store/$slug/account'
+      path: '/account'
+      fullPath: '/store/$slug/account'
+      preLoaderRoute: typeof StoreSlugAccountRouteImport
       parentRoute: typeof StoreSlugRouteRoute
     }
     '/_authenticated/b/$slug': {
@@ -796,6 +815,7 @@ const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface StoreSlugRouteRouteChildren {
+  StoreSlugAccountRoute: typeof StoreSlugAccountRoute
   StoreSlugAuthRoute: typeof StoreSlugAuthRoute
   StoreSlugCheckoutRoute: typeof StoreSlugCheckoutRoute
   StoreSlugSearchRoute: typeof StoreSlugSearchRoute
@@ -806,6 +826,7 @@ interface StoreSlugRouteRouteChildren {
 }
 
 const StoreSlugRouteRouteChildren: StoreSlugRouteRouteChildren = {
+  StoreSlugAccountRoute: StoreSlugAccountRoute,
   StoreSlugAuthRoute: StoreSlugAuthRoute,
   StoreSlugCheckoutRoute: StoreSlugCheckoutRoute,
   StoreSlugSearchRoute: StoreSlugSearchRoute,
