@@ -240,6 +240,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   const t = useT();
   const { lang } = useI18n();
   const isAr = lang === "ar";
+  const brand = useBrand();
   const [form, setForm] = useState({
     name: product?.name ?? "",
     description: product?.description ?? "",
@@ -250,6 +251,19 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   });
   const [uploading, setUploading] = useState(false);
   const mediaInput = useState<HTMLInputElement | null>(null);
+
+  const categoriesQ = useQuery({
+    queryKey: ["categories", brand.id],
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("categories") as any)
+        .select("id, name_en, name_ar, slug")
+        .eq("brand_id", brand.id)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; name_en: string; name_ar: string | null; slug: string | null }>;
+    },
+  });
 
   const uploadMedia = async (file: File) => {
     try {
@@ -289,7 +303,30 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       <DialogHeader><DialogTitle>{product ? t("inventory.editProduct") : t("inventory.newProduct")}</DialogTitle></DialogHeader>
       <div className="space-y-3">
         <div><Label>{t("inventory.name")}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-        <div><Label>{t("inventory.category")}</Label><Input placeholder={t("inventory.categoryPh")} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></div>
+        <div>
+          <Label>{t("inventory.category")}</Label>
+          {(categoriesQ.data ?? []).length > 0 ? (
+            <select
+              className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+            >
+              <option value="">{isAr ? "بدون قسم" : "No category"}</option>
+              {(categoriesQ.data ?? []).map((c) => {
+                const val = c.slug || c.name_en;
+                const label = isAr ? c.name_ar || c.name_en : c.name_en;
+                return <option key={c.id} value={val}>{label}</option>;
+              })}
+            </select>
+          ) : (
+            <Input placeholder={t("inventory.categoryPh")} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+          )}
+          {(categoriesQ.data ?? []).length === 0 && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {isAr ? "أنشئ أقسامًا من صفحة الأقسام لتظهر هنا كقائمة منسدلة." : "Create categories in the Categories page to get a dropdown here."}
+            </p>
+          )}
+        </div>
         <div><Label>{t("inventory.imageUrl")}</Label><Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} /></div>
         <div><Label>{t("inventory.description")}</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
 

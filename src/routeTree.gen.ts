@@ -38,6 +38,7 @@ import { Route as AuthenticatedBSlugIntegrationsRouteImport } from './routes/_au
 import { Route as AuthenticatedBSlugExpensesRouteImport } from './routes/_authenticated/b.$slug.expenses'
 import { Route as AuthenticatedBSlugDashboardRouteImport } from './routes/_authenticated/b.$slug.dashboard'
 import { Route as AuthenticatedBSlugCustomersRouteImport } from './routes/_authenticated/b.$slug.customers'
+import { Route as AuthenticatedBSlugCategoriesRouteImport } from './routes/_authenticated/b.$slug.categories'
 import { Route as AuthenticatedBSlugCampaignsRouteImport } from './routes/_authenticated/b.$slug.campaigns'
 import { Route as AuthenticatedBSlugOrdersIndexRouteImport } from './routes/_authenticated/b.$slug.orders.index'
 import { Route as AuthenticatedBSlugOrdersIdRouteImport } from './routes/_authenticated/b.$slug.orders.$id'
@@ -193,6 +194,12 @@ const AuthenticatedBSlugCustomersRoute =
     path: '/customers',
     getParentRoute: () => AuthenticatedBSlugRouteRoute,
   } as any)
+const AuthenticatedBSlugCategoriesRoute =
+  AuthenticatedBSlugCategoriesRouteImport.update({
+    id: '/categories',
+    path: '/categories',
+    getParentRoute: () => AuthenticatedBSlugRouteRoute,
+  } as any)
 const AuthenticatedBSlugCampaignsRoute =
   AuthenticatedBSlugCampaignsRouteImport.update({
     id: '/campaigns',
@@ -233,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/store/$slug/checkout': typeof StoreSlugCheckoutRoute
   '/store/$slug/': typeof StoreSlugIndexRoute
   '/b/$slug/campaigns': typeof AuthenticatedBSlugCampaignsRoute
+  '/b/$slug/categories': typeof AuthenticatedBSlugCategoriesRoute
   '/b/$slug/customers': typeof AuthenticatedBSlugCustomersRoute
   '/b/$slug/dashboard': typeof AuthenticatedBSlugDashboardRoute
   '/b/$slug/expenses': typeof AuthenticatedBSlugExpensesRoute
@@ -265,6 +273,7 @@ export interface FileRoutesByTo {
   '/store/$slug/checkout': typeof StoreSlugCheckoutRoute
   '/store/$slug': typeof StoreSlugIndexRoute
   '/b/$slug/campaigns': typeof AuthenticatedBSlugCampaignsRoute
+  '/b/$slug/categories': typeof AuthenticatedBSlugCategoriesRoute
   '/b/$slug/customers': typeof AuthenticatedBSlugCustomersRoute
   '/b/$slug/dashboard': typeof AuthenticatedBSlugDashboardRoute
   '/b/$slug/expenses': typeof AuthenticatedBSlugExpensesRoute
@@ -300,6 +309,7 @@ export interface FileRoutesById {
   '/store/$slug/checkout': typeof StoreSlugCheckoutRoute
   '/store/$slug/': typeof StoreSlugIndexRoute
   '/_authenticated/b/$slug/campaigns': typeof AuthenticatedBSlugCampaignsRoute
+  '/_authenticated/b/$slug/categories': typeof AuthenticatedBSlugCategoriesRoute
   '/_authenticated/b/$slug/customers': typeof AuthenticatedBSlugCustomersRoute
   '/_authenticated/b/$slug/dashboard': typeof AuthenticatedBSlugDashboardRoute
   '/_authenticated/b/$slug/expenses': typeof AuthenticatedBSlugExpensesRoute
@@ -335,6 +345,7 @@ export interface FileRouteTypes {
     | '/store/$slug/checkout'
     | '/store/$slug/'
     | '/b/$slug/campaigns'
+    | '/b/$slug/categories'
     | '/b/$slug/customers'
     | '/b/$slug/dashboard'
     | '/b/$slug/expenses'
@@ -367,6 +378,7 @@ export interface FileRouteTypes {
     | '/store/$slug/checkout'
     | '/store/$slug'
     | '/b/$slug/campaigns'
+    | '/b/$slug/categories'
     | '/b/$slug/customers'
     | '/b/$slug/dashboard'
     | '/b/$slug/expenses'
@@ -401,6 +413,7 @@ export interface FileRouteTypes {
     | '/store/$slug/checkout'
     | '/store/$slug/'
     | '/_authenticated/b/$slug/campaigns'
+    | '/_authenticated/b/$slug/categories'
     | '/_authenticated/b/$slug/customers'
     | '/_authenticated/b/$slug/dashboard'
     | '/_authenticated/b/$slug/expenses'
@@ -629,6 +642,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBSlugCustomersRouteImport
       parentRoute: typeof AuthenticatedBSlugRouteRoute
     }
+    '/_authenticated/b/$slug/categories': {
+      id: '/_authenticated/b/$slug/categories'
+      path: '/categories'
+      fullPath: '/b/$slug/categories'
+      preLoaderRoute: typeof AuthenticatedBSlugCategoriesRouteImport
+      parentRoute: typeof AuthenticatedBSlugRouteRoute
+    }
     '/_authenticated/b/$slug/campaigns': {
       id: '/_authenticated/b/$slug/campaigns'
       path: '/campaigns'
@@ -655,6 +675,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedBSlugRouteRouteChildren {
   AuthenticatedBSlugCampaignsRoute: typeof AuthenticatedBSlugCampaignsRoute
+  AuthenticatedBSlugCategoriesRoute: typeof AuthenticatedBSlugCategoriesRoute
   AuthenticatedBSlugCustomersRoute: typeof AuthenticatedBSlugCustomersRoute
   AuthenticatedBSlugDashboardRoute: typeof AuthenticatedBSlugDashboardRoute
   AuthenticatedBSlugExpensesRoute: typeof AuthenticatedBSlugExpensesRoute
@@ -669,6 +690,7 @@ interface AuthenticatedBSlugRouteRouteChildren {
 const AuthenticatedBSlugRouteRouteChildren: AuthenticatedBSlugRouteRouteChildren =
   {
     AuthenticatedBSlugCampaignsRoute: AuthenticatedBSlugCampaignsRoute,
+    AuthenticatedBSlugCategoriesRoute: AuthenticatedBSlugCategoriesRoute,
     AuthenticatedBSlugCustomersRoute: AuthenticatedBSlugCustomersRoute,
     AuthenticatedBSlugDashboardRoute: AuthenticatedBSlugDashboardRoute,
     AuthenticatedBSlugExpensesRoute: AuthenticatedBSlugExpensesRoute,
