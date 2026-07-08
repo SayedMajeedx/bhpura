@@ -32,6 +32,19 @@ export type PublicSettings = {
   delivery_enabled: boolean;
   pickup_enabled: boolean;
   delivery_fee: number;
+  // Theme customizer
+  logo_size: number;
+  logo_align: "left" | "center" | "right";
+  header_bg: string | null;
+  header_fg: string | null;
+  footer_bg: string | null;
+  footer_fg: string | null;
+  heading_color: string | null;
+  link_color: string | null;
+  btn_primary_bg: string | null;
+  btn_primary_fg: string | null;
+  btn_secondary_bg: string | null;
+  btn_secondary_fg: string | null;
 };
 
 export type CartItem = {
@@ -83,7 +96,6 @@ export function StorefrontProvider({
   const [cart, setCart] = useState<CartItem[]>([]);
   const [session, setSession] = useState<Session | null>(null);
 
-  // Hydrate from localStorage
   useEffect(() => {
     try {
       const l = localStorage.getItem(langKey);
@@ -99,7 +111,6 @@ export function StorefrontProvider({
     } catch {}
   }, [cart, cartKey]);
 
-  // Auth session — track for cross-brand shopper accounts
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
     const { data } = supabase.auth.onAuthStateChange((_evt, s) => setSession(s));
@@ -199,4 +210,18 @@ export function formatPrice(amount: number, currency: string, lang: StoreLang) {
   } catch {
     return `${amount.toFixed(3)} ${currency}`;
   }
+}
+
+/** Pick a readable foreground (#000 or #fff) for a given hex background. */
+export function readableOn(hex: string | null | undefined, fallback = "#111111"): string {
+  if (!hex) return fallback;
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return fallback;
+  const int = parseInt(m[1], 16);
+  const r = (int >> 16) & 0xff;
+  const g = (int >> 8) & 0xff;
+  const b = int & 0xff;
+  // Relative luminance approximation
+  const l = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return l > 0.6 ? "#111111" : "#ffffff";
 }
