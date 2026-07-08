@@ -18,7 +18,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ShoppingBag, Languages, Minus, Plus, Trash2, X } from "lucide-react";
+import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, LogOut } from "lucide-react";
 
 export const Route = createFileRoute("/store/$slug")({
   loader: async ({ params }) => {
@@ -146,7 +146,7 @@ function StoreShell() {
 }
 
 function StoreHeader() {
-  const { brand, settings, lang, setLang, t, cartCount } = useStorefront();
+  const { brand, settings, lang, setLang, t, cartCount, session, signOut } = useStorefront();
   const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
 
   return (
@@ -184,6 +184,20 @@ function StoreHeader() {
             <span className="hidden sm:inline">{lang === "ar" ? "English" : "العربية"}</span>
           </Button>
 
+          {session ? (
+            <Button variant="ghost" size="sm" className="gap-1" onClick={() => signOut()} title={session.user?.email ?? ""}>
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline max-w-[120px] truncate">{session.user?.email ?? t("خروج", "Sign out")}</span>
+            </Button>
+          ) : (
+            <Button asChild variant="ghost" size="sm" className="gap-1">
+              <Link to="/store/$slug/auth" params={{ slug: brand.slug }}>
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">{t("دخول", "Sign in")}</span>
+              </Link>
+            </Button>
+          )}
+
           <CartDrawer>
             <Button variant="ghost" size="sm" className="relative gap-1">
               <ShoppingBag className="h-5 w-5" />
@@ -203,6 +217,7 @@ function StoreHeader() {
     </header>
   );
 }
+
 
 function CartDrawer({ children }: { children: React.ReactNode }) {
   const { cart, cartTotal, currency, lang, t, updateQty, removeFromCart, brand, settings } =
