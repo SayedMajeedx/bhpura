@@ -354,6 +354,7 @@ function AddressesSection({ isAr, lang }: { isAr: boolean; lang: "ar" | "en" }) 
     const { error } = await supabase.from("customer_addresses").insert({
       customer_id: customer.id,
       brand_id: customer.brand_id,
+      user_id: customer.user_id,
       label: form.label.trim() || null,
       region: form.region.trim() || null,
       block: form.block.trim() || null,
