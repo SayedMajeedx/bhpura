@@ -763,6 +763,8 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           <ColorField label={isAr ? "نص الزر الأساسي" : "Primary button text"} value={state.btn_primary_fg} onChange={(v) => setState({ ...state, btn_primary_fg: v })} />
           <ColorField label={isAr ? "خلفية الزر الثانوي (اشتر الآن)" : "Secondary button bg (Buy now)"} value={state.btn_secondary_bg} onChange={(v) => setState({ ...state, btn_secondary_bg: v })} />
           <ColorField label={isAr ? "نص الزر الثانوي" : "Secondary button text"} value={state.btn_secondary_fg} onChange={(v) => setState({ ...state, btn_secondary_fg: v })} />
+          <ColorField label={isAr ? "خلفية زر إتمام الشراء" : "Checkout button bg"} value={state.btn_checkout_bg} onChange={(v) => setState({ ...state, btn_checkout_bg: v })} />
+          <ColorField label={isAr ? "نص زر إتمام الشراء" : "Checkout button text"} value={state.btn_checkout_fg} onChange={(v) => setState({ ...state, btn_checkout_fg: v })} />
         </div>
       </div>
 
