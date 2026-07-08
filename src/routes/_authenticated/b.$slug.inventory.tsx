@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Package, TrendingUp, Wand as Wand2, Printer } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, TrendingUp, Wand as Wand2, Printer, Sparkles, Loader2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { translateProductText } from "@/lib/translate.functions";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
@@ -25,7 +27,19 @@ export const Route = createFileRoute("/_authenticated/b/$slug/inventory")({
 });
 
 type MediaItem = { type: "image" | "video"; url: string };
-type Product = { id: string; name: string; description: string | null; category: string | null; image_url: string | null; is_active: boolean; media: MediaItem[] };
+type Product = {
+  id: string;
+  name: string;
+  name_ar: string | null;
+  name_en: string | null;
+  description: string | null;
+  description_ar: string | null;
+  description_en: string | null;
+  category: string | null;
+  image_url: string | null;
+  is_active: boolean;
+  media: MediaItem[];
+};
 type Variant = {
   id: string; product_id: string; sku: string | null; size: string | null; color: string | null; fabric: string | null;
   cost_price: number; selling_price: number; stock: number;
