@@ -237,82 +237,90 @@ function StoreHeader() {
         borderColor: "rgba(0,0,0,0.08)",
       }}
     >
-      <div
-        className={`mx-auto max-w-7xl px-4 sm:px-6 h-16 flex items-center gap-3 ${
-          align === "center" ? "justify-between" : "justify-between"
-        }`}
-      >
-        <Link
-          to="/store/$slug"
-          params={{ slug: brand.slug }}
-          className={`flex items-center gap-3 min-w-0 ${align === "center" ? "mx-auto" : ""}`}
-          style={{ color: "var(--sf-header-fg)" }}
-        >
-          {settings.logo_url && (
-            <img
-              src={settings.logo_url}
-              alt={displayName}
-              className="shrink-0 object-contain"
-              style={{
-                height: logoSize,
-                maxHeight: logoSize,
-                width: "auto",
-                maxWidth: logoSize * 3,
-              }}
-            />
-          )}
-          <span
-            className="font-display text-lg sm:text-xl truncate"
-            style={{ color: "var(--sf-heading)" }}
-          >
-            {displayName}
-          </span>
-        </Link>
-
-        <div
-          className="flex items-center gap-1 sm:gap-2 shrink-0"
-          style={{ color: "var(--sf-header-fg)" }}
-        >
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-1 hover:bg-black/5"
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 flex flex-col gap-2">
+        <div className="h-14 flex items-center gap-3 justify-between">
+          <Link
+            to="/store/$slug"
+            params={{ slug: brand.slug }}
+            className={`flex items-center gap-3 min-w-0 ${align === "center" ? "sm:mx-auto" : ""}`}
             style={{ color: "var(--sf-header-fg)" }}
-            onClick={() => setLang(lang === "ar" ? "en" : "ar")}
-            aria-label="Language switch"
           >
-            <Languages className="h-4 w-4" />
-            <span className="hidden sm:inline">{lang === "ar" ? "English" : "العربية"}</span>
-          </Button>
+            {settings.logo_url && (
+              <img
+                src={settings.logo_url}
+                alt={displayName}
+                className="shrink-0 object-contain"
+                style={{
+                  height: logoSize,
+                  maxHeight: logoSize,
+                  width: "auto",
+                  maxWidth: logoSize * 3,
+                }}
+              />
+            )}
+            <span
+              className="font-display text-lg sm:text-xl truncate"
+              style={{ color: "var(--sf-heading)" }}
+            >
+              {displayName}
+            </span>
+          </Link>
 
-          {session ? (
-            <Button variant="ghost" size="sm" className="gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }} onClick={() => signOut()} title={session.user?.email ?? ""}>
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline max-w-[120px] truncate">{session.user?.email ?? t("خروج", "Sign out")}</span>
-            </Button>
-          ) : (
-            <Button asChild variant="ghost" size="sm" className="gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
-              <Link to="/store/$slug/auth" params={{ slug: brand.slug }}>
-                <User className="h-4 w-4" />
-                <span className="hidden sm:inline">{t("دخول", "Sign in")}</span>
-              </Link>
-            </Button>
-          )}
+          {/* Desktop search */}
+          <div className="hidden md:flex flex-1 max-w-md mx-4">
+            <SearchBar />
+          </div>
 
-          <CartDrawer>
-            <Button variant="ghost" size="sm" className="relative gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
-              <ShoppingBag className="h-5 w-5" />
-              <span className="hidden sm:inline">{t("السلة", "Cart")}</span>
-              {cartCount > 0 && (
-                <span
-                  className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold grid place-items-center"
-                  style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}
-                >
-                  {cartCount}
-                </span>
-              )}
+          <div
+            className="flex items-center gap-1 sm:gap-2 shrink-0"
+            style={{ color: "var(--sf-header-fg)" }}
+          >
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1 hover:bg-black/5"
+              style={{ color: "var(--sf-header-fg)" }}
+              onClick={() => setLang(lang === "ar" ? "en" : "ar")}
+              aria-label="Language switch"
+            >
+              <Languages className="h-4 w-4" />
+              <span className="hidden sm:inline">{lang === "ar" ? "English" : "العربية"}</span>
             </Button>
-          </CartDrawer>
+
+            {session ? (
+              <Button variant="ghost" size="sm" className="gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }} onClick={() => signOut()} title={session.user?.email ?? ""}>
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline max-w-[120px] truncate">{session.user?.email ?? t("خروج", "Sign out")}</span>
+              </Button>
+            ) : (
+              <Button asChild variant="ghost" size="sm" className="gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
+                <Link to="/store/$slug/auth" params={{ slug: brand.slug }}>
+                  <User className="h-4 w-4" />
+                  <span className="hidden sm:inline">{t("دخول", "Sign in")}</span>
+                </Link>
+              </Button>
+            )}
+
+            <CartDrawer>
+              <Button variant="ghost" size="sm" className="relative gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
+                <ShoppingBag className="h-5 w-5" />
+                <span className="hidden sm:inline">{t("السلة", "Cart")}</span>
+                {cartCount > 0 && (
+                  <span
+                    className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold grid place-items-center"
+                    style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}
+                  >
+                    {cartCount}
+                  </span>
+                )}
+              </Button>
+            </CartDrawer>
+          </div>
+        </div>
+
+        {/* Mobile search */}
+        <div className="md:hidden pb-1">
+          <SearchBar />
         </div>
       </div>
     </header>
