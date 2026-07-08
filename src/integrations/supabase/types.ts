@@ -922,11 +922,15 @@ export type Database = {
           category: string | null
           created_at: string
           description: string | null
+          description_ar: string | null
+          description_en: string | null
           id: string
           image_url: string | null
           is_active: boolean
           media: Json
           name: string
+          name_ar: string | null
+          name_en: string | null
           updated_at: string
           user_id: string
         }
@@ -936,11 +940,15 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          description_ar?: string | null
+          description_en?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
           media?: Json
           name: string
+          name_ar?: string | null
+          name_en?: string | null
           updated_at?: string
           user_id: string
         }
@@ -950,11 +958,15 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          description_ar?: string | null
+          description_en?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
           media?: Json
           name?: string
+          name_ar?: string | null
+          name_en?: string | null
           updated_at?: string
           user_id?: string
         }
