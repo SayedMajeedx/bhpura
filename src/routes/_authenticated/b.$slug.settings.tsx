@@ -618,3 +618,153 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
   );
 }
 
+
+function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
+  const qc = useQueryClient();
+  const [saving, setSaving] = useState(false);
+  const [state, setState] = useState<{
+    logo_size: number;
+    logo_align: string;
+    header_bg: string | null;
+    header_fg: string | null;
+    footer_bg: string | null;
+    footer_fg: string | null;
+    heading_color: string | null;
+    link_color: string | null;
+    btn_primary_bg: string | null;
+    btn_primary_fg: string | null;
+    btn_secondary_bg: string | null;
+    btn_secondary_fg: string | null;
+  } | null>(null);
+
+  const { data } = useQuery({
+    queryKey: ["business-settings-theme", brandId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("business_settings")
+        .select("logo_size, logo_align, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg")
+        .eq("brand_id", brandId).maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  useEffect(() => {
+    if (data) setState({
+      logo_size: data.logo_size ?? 48,
+      logo_align: data.logo_align ?? "left",
+      header_bg: data.header_bg ?? null,
+      header_fg: data.header_fg ?? null,
+      footer_bg: data.footer_bg ?? null,
+      footer_fg: data.footer_fg ?? null,
+      heading_color: data.heading_color ?? null,
+      link_color: data.link_color ?? null,
+      btn_primary_bg: data.btn_primary_bg ?? null,
+      btn_primary_fg: data.btn_primary_fg ?? null,
+      btn_secondary_bg: data.btn_secondary_bg ?? null,
+      btn_secondary_fg: data.btn_secondary_fg ?? null,
+    });
+  }, [data]);
+
+  const save = async () => {
+    if (!state) return;
+    setSaving(true);
+    const { error } = await (supabase.from("business_settings") as any).update(state).eq("brand_id", brandId);
+    setSaving(false);
+    if (error) toast.error(error.message);
+    else { toast.success(isAr ? "تم الحفظ" : "Saved"); qc.invalidateQueries({ queryKey: ["business-settings-theme", brandId] }); }
+  };
+
+  if (!state) return null;
+
+  const ColorField = ({ label, value, onChange }: { label: string; value: string | null; onChange: (v: string | null) => void }) => (
+    <div>
+      <Label>{label}</Label>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={value ?? "#000000"}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-9 w-12 rounded border border-border cursor-pointer"
+        />
+        <Input value={value ?? ""} placeholder={isAr ? "افتراضي" : "auto"} onChange={(e) => onChange(e.target.value || null)} />
+        {value && (
+          <Button type="button" variant="ghost" size="sm" onClick={() => onChange(null)}>
+            {isAr ? "افتراضي" : "Reset"}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <Card className="p-6 space-y-6">
+      <div>
+        <h2 className="font-display text-xl">{isAr ? "مظهر المتجر" : "Storefront Customizer"}</h2>
+        <p className="text-sm text-muted-foreground">
+          {isAr ? "خصّص شكل المتجر العام — يطبَّق فوراً بعد الحفظ" : "Customize the public storefront — applied instantly after saving"}
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="font-medium text-sm">{isAr ? "الشعار" : "Logo"}</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label>{isAr ? "حجم الشعار (بكسل)" : "Logo size (px)"}</Label>
+            <Input type="number" min={24} max={120} value={state.logo_size}
+              onChange={(e) => setState({ ...state, logo_size: Math.max(24, Math.min(120, Number(e.target.value))) })} />
+          </div>
+          <div>
+            <Label>{isAr ? "محاذاة الشعار" : "Logo alignment"}</Label>
+            <div className="flex gap-2">
+              {(["left", "center", "right"] as const).map((a) => (
+                <Button
+                  key={a}
+                  type="button"
+                  size="sm"
+                  variant={state.logo_align === a ? "default" : "outline"}
+                  onClick={() => setState({ ...state, logo_align: a })}
+                >
+                  {isAr ? (a === "left" ? "يسار" : a === "center" ? "وسط" : "يمين") : a}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="font-medium text-sm">{isAr ? "الترويسة والتذييل" : "Header & Footer"}</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <ColorField label={isAr ? "خلفية الترويسة" : "Header background"} value={state.header_bg} onChange={(v) => setState({ ...state, header_bg: v })} />
+          <ColorField label={isAr ? "نص الترويسة" : "Header text"} value={state.header_fg} onChange={(v) => setState({ ...state, header_fg: v })} />
+          <ColorField label={isAr ? "خلفية التذييل" : "Footer background"} value={state.footer_bg} onChange={(v) => setState({ ...state, footer_bg: v })} />
+          <ColorField label={isAr ? "نص التذييل" : "Footer text"} value={state.footer_fg} onChange={(v) => setState({ ...state, footer_fg: v })} />
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="font-medium text-sm">{isAr ? "الطباعة" : "Typography"}</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <ColorField label={isAr ? "لون العناوين" : "Heading color"} value={state.heading_color} onChange={(v) => setState({ ...state, heading_color: v })} />
+          <ColorField label={isAr ? "لون الروابط" : "Link color"} value={state.link_color} onChange={(v) => setState({ ...state, link_color: v })} />
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="font-medium text-sm">{isAr ? "الأزرار" : "Buttons"}</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <ColorField label={isAr ? "خلفية الزر الأساسي (أضف للسلة)" : "Primary button bg (Add to cart)"} value={state.btn_primary_bg} onChange={(v) => setState({ ...state, btn_primary_bg: v })} />
+          <ColorField label={isAr ? "نص الزر الأساسي" : "Primary button text"} value={state.btn_primary_fg} onChange={(v) => setState({ ...state, btn_primary_fg: v })} />
+          <ColorField label={isAr ? "خلفية الزر الثانوي (اشتر الآن)" : "Secondary button bg (Buy now)"} value={state.btn_secondary_bg} onChange={(v) => setState({ ...state, btn_secondary_bg: v })} />
+          <ColorField label={isAr ? "نص الزر الثانوي" : "Secondary button text"} value={state.btn_secondary_fg} onChange={(v) => setState({ ...state, btn_secondary_fg: v })} />
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button size="sm" onClick={save} disabled={saving}>{isAr ? "حفظ مظهر المتجر" : "Save storefront theme"}</Button>
+      </div>
+    </Card>
+  );
+}
