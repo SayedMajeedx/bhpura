@@ -209,8 +209,13 @@ function StoreHeader() {
             <img
               src={settings.logo_url}
               alt={displayName}
-              className="rounded-full object-cover shrink-0"
-              style={{ height: logoSize, width: logoSize }}
+              className="shrink-0 object-contain"
+              style={{
+                height: logoSize,
+                maxHeight: logoSize,
+                width: "auto",
+                maxWidth: logoSize * 3,
+              }}
             />
           )}
           <span
