@@ -20,7 +20,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, LogOut, Search } from "lucide-react";
+import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/store/$slug")({
