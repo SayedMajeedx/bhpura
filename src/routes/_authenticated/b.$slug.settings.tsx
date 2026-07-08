@@ -14,6 +14,8 @@ import { useT, useI18n } from "@/lib/i18n";
 import { PhoneInput } from "@/components/phone-input";
 import { Rnd } from "react-rnd";
 import { useBrand } from "@/lib/brand-context";
+import { Switch } from "@/components/ui/switch";
+import { Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/b/$slug/settings")({
   component: Settings,
@@ -294,8 +296,245 @@ function Settings() {
           </Card>
         )}
 
+        <PaymentSettingsCard brandId={brandId} />
+        <BrandHeroCard brandId={brandId} />
+
         <div className="flex justify-end"><Button onClick={save}>{t("settings.save")}</Button></div>
+
       </div>
     </div>
   );
 }
+
+type MediaItem = { type: "image" | "video"; url: string };
+
+function PaymentSettingsCard({ brandId }: { brandId: string }) {
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
+  const qc = useQueryClient();
+  const qrInput = useRef<HTMLInputElement>(null);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [state, setState] = useState<{
+    cod_enabled: boolean; card_enabled: boolean; benefit_enabled: boolean; benefit_qr_url: string | null;
+  } | null>(null);
+
+  const { data } = useQuery({
+    queryKey: ["business-settings-payments", brandId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("business_settings")
+        .select("cod_enabled, card_enabled, benefit_enabled, benefit_qr_url")
+        .eq("brand_id", brandId).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  useEffect(() => {
+    if (data) setState({
+      cod_enabled: data.cod_enabled ?? true,
+      card_enabled: data.card_enabled ?? false,
+      benefit_enabled: data.benefit_enabled ?? false,
+      benefit_qr_url: data.benefit_qr_url ?? null,
+    });
+  }, [data]);
+
+  const save = async () => {
+    if (!state) return;
+    setSaving(true);
+    const { error } = await supabase.from("business_settings").update(state).eq("brand_id", brandId);
+    setSaving(false);
+    if (error) toast.error(error.message);
+    else { toast.success(isAr ? "تم الحفظ" : "Saved"); qc.invalidateQueries({ queryKey: ["business-settings-payments", brandId] }); }
+  };
+
+  const uploadQr = async (file: File) => {
+    try {
+      setUploading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const ext = file.name.split(".").pop() ?? "png";
+      const path = `${user.id}/brand-media/benefit-qr-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("invoice-assets").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data, error: se } = await supabase.storage.from("invoice-assets").createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+      if (se || !data) throw se ?? new Error("Failed to sign URL");
+      setState((s) => (s ? { ...s, benefit_qr_url: data.signedUrl } : s));
+      toast.success(isAr ? "تم رفع الرمز — لا تنسَ الحفظ" : "QR uploaded — remember to save");
+    } catch (e: any) {
+      toast.error(e.message ?? "Upload failed");
+    } finally { setUploading(false); }
+  };
+
+  if (!state) return null;
+
+  return (
+    <Card className="p-6 space-y-4">
+      <div>
+        <h2 className="font-display text-xl">{isAr ? "إعدادات الدفع" : "Payment Settings"}</h2>
+        <p className="text-sm text-muted-foreground">{isAr ? "التحكم بوسائل الدفع المتاحة للعملاء في المتجر" : "Control which payment methods are shown to storefront customers"}</p>
+      </div>
+
+      {[
+        { key: "cod_enabled" as const, ar: "الدفع عند الاستلام", en: "Cash on Delivery" },
+        { key: "card_enabled" as const, ar: "بطاقة ائتمان", en: "Card Payment" },
+        { key: "benefit_enabled" as const, ar: "بنفت باي (Benefit Pay)", en: "Benefit Pay" },
+      ].map((row) => (
+        <div key={row.key} className="flex items-center justify-between rounded-md border border-border p-3">
+          <p className="text-sm font-medium">{isAr ? row.ar : row.en}</p>
+          <Switch checked={state[row.key]} onCheckedChange={(v) => setState({ ...state, [row.key]: v })} />
+        </div>
+      ))}
+
+      {state.benefit_enabled && (
+        <div className="rounded-md border border-border p-3 space-y-2">
+          <Label>{isAr ? "رمز QR لبنفت باي" : "Benefit Pay QR image"}</Label>
+          <div className="flex items-center gap-3">
+            {state.benefit_qr_url && (
+              <img src={state.benefit_qr_url} alt="QR" className="w-24 h-24 object-contain border border-border rounded" />
+            )}
+            <div className="flex gap-2">
+              <input ref={qrInput} type="file" accept="image/*" className="hidden"
+                onChange={(e) => e.target.files?.[0] && uploadQr(e.target.files[0])} />
+              <Button type="button" variant="outline" size="sm" onClick={() => qrInput.current?.click()} disabled={uploading}>
+                <Upload className="h-4 w-4 me-1" /> {uploading ? "…" : isAr ? "رفع" : "Upload"}
+              </Button>
+              {state.benefit_qr_url && (
+                <Button type="button" variant="ghost" size="sm" onClick={() => setState({ ...state, benefit_qr_url: null })}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-end">
+        <Button size="sm" onClick={save} disabled={saving}>{isAr ? "حفظ إعدادات الدفع" : "Save payment settings"}</Button>
+      </div>
+    </Card>
+  );
+}
+
+function BrandHeroCard({ brandId }: { brandId: string }) {
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
+  const qc = useQueryClient();
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [state, setState] = useState<{ hero_media: MediaItem[]; primary_color: string | null; about_ar: string | null; about_en: string | null } | null>(null);
+
+  const { data } = useQuery({
+    queryKey: ["brand-hero", brandId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("brands")
+        .select("hero_media, primary_color, about_ar, about_en").eq("id", brandId).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  useEffect(() => {
+    if (data) setState({
+      hero_media: Array.isArray(data.hero_media) ? (data.hero_media as any) : [],
+      primary_color: data.primary_color ?? null,
+      about_ar: data.about_ar ?? null,
+      about_en: data.about_en ?? null,
+    });
+  }, [data]);
+
+  const uploadMedia = async (file: File) => {
+    try {
+      setUploading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const ext = file.name.split(".").pop() ?? "bin";
+      const path = `${user.id}/brand-media/hero-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("invoice-assets").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data, error: se } = await supabase.storage.from("invoice-assets").createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+      if (se || !data) throw se ?? new Error("Failed to sign URL");
+      const type: "image" | "video" = file.type.startsWith("video") ? "video" : "image";
+      setState((s) => (s ? { ...s, hero_media: [...s.hero_media, { type, url: data.signedUrl }] } : s));
+      toast.success(isAr ? "تم الرفع — لا تنسَ الحفظ" : "Uploaded — remember to save");
+    } catch (e: any) {
+      toast.error(e.message ?? "Upload failed");
+    } finally { setUploading(false); }
+  };
+
+  const save = async () => {
+    if (!state) return;
+    setSaving(true);
+    const { error } = await supabase.from("brands").update({
+      hero_media: state.hero_media as any,
+      primary_color: state.primary_color,
+      about_ar: state.about_ar,
+      about_en: state.about_en,
+    }).eq("id", brandId);
+    setSaving(false);
+    if (error) toast.error(error.message);
+    else { toast.success(isAr ? "تم الحفظ" : "Saved"); qc.invalidateQueries({ queryKey: ["brand-hero", brandId] }); }
+  };
+
+  if (!state) return null;
+
+  return (
+    <Card className="p-6 space-y-4">
+      <div>
+        <h2 className="font-display text-xl">{isAr ? "واجهة المتجر" : "Storefront Hero"}</h2>
+        <p className="text-sm text-muted-foreground">{isAr ? "الصور/الفيديو والنبذة التي يراها العملاء في الصفحة الرئيسية" : "Hero media, brand color, and About text shown on the public storefront home"}</p>
+      </div>
+
+      <div className="space-y-2">
+        <Label>{isAr ? "وسائط الواجهة" : "Hero media"}</Label>
+        <div className="flex flex-wrap gap-2">
+          {state.hero_media.map((m, i) => (
+            <div key={i} className="relative w-28 h-20 rounded-md border border-border overflow-hidden bg-secondary">
+              {m.type === "video" ? (
+                <video src={m.url} className="w-full h-full object-cover" muted />
+              ) : (
+                <img src={m.url} alt="" className="w-full h-full object-cover" />
+              )}
+              <button type="button" className="absolute top-0.5 end-0.5 bg-background/80 rounded-full p-0.5"
+                onClick={() => setState({ ...state, hero_media: state.hero_media.filter((_, j) => j !== i) })}>
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+          <label className="w-28 h-20 rounded-md border border-dashed border-border flex items-center justify-center text-xs text-muted-foreground cursor-pointer hover:bg-secondary">
+            {uploading ? "…" : (isAr ? "+ إضافة" : "+ Add")}
+            <input type="file" accept="image/*,video/*" className="hidden"
+              onChange={(e) => e.target.files?.[0] && uploadMedia(e.target.files[0])} />
+          </label>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <Label>{isAr ? "لون العلامة" : "Brand color"}</Label>
+          <div className="flex items-center gap-2">
+            <input type="color" value={state.primary_color ?? "#000000"}
+              onChange={(e) => setState({ ...state, primary_color: e.target.value })}
+              className="h-9 w-12 rounded border border-border cursor-pointer" />
+            <Input value={state.primary_color ?? ""} onChange={(e) => setState({ ...state, primary_color: e.target.value })} />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <Label>{isAr ? "نبذة (عربي)" : "About (Arabic)"}</Label>
+          <Textarea value={state.about_ar ?? ""} onChange={(e) => setState({ ...state, about_ar: e.target.value })} />
+        </div>
+        <div>
+          <Label>{isAr ? "نبذة (إنجليزي)" : "About (English)"}</Label>
+          <Textarea value={state.about_en ?? ""} onChange={(e) => setState({ ...state, about_en: e.target.value })} />
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button size="sm" onClick={save} disabled={saving}>{isAr ? "حفظ واجهة المتجر" : "Save storefront hero"}</Button>
+      </div>
+    </Card>
+  );
+}
+

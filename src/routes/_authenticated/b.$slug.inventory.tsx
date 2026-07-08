@@ -16,12 +16,15 @@ import { ActivityLogList } from "@/components/activity-log-list";
 import { BarcodeSvg, PrintLabelButton, printLabels, type LabelData } from "@/components/barcode-label";
 import { useProfile } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
+import { Switch } from "@/components/ui/switch";
 
 export const Route = createFileRoute("/_authenticated/b/$slug/inventory")({
   component: Inventory,
 });
 
-type Product = { id: string; name: string; description: string | null; category: string | null; image_url: string | null };
+type MediaItem = { type: "image" | "video"; url: string };
+type Product = { id: string; name: string; description: string | null; category: string | null; image_url: string | null; is_active: boolean; media: MediaItem[] };
 type Variant = {
   id: string; product_id: string; sku: string | null; size: string | null; color: string | null; fabric: string | null;
   cost_price: number; selling_price: number; stock: number;
@@ -36,12 +39,21 @@ function Inventory() {
   const brandId = brand.id;
   const [tab, setTab] = useState<"products" | "customizations">("products");
 
+  useRealtimeInvalidate(
+    [
+      { table: "products", brandId, queryKey: ["products", brandId] },
+      { table: "product_variants", brandId, queryKey: ["variants", brandId] },
+      { table: "customization_options", brandId, queryKey: ["customizations", brandId] },
+    ],
+    `inventory-${brandId}`,
+  );
+
   const products = useQuery({
     queryKey: ["products", brandId],
     queryFn: async () => {
       const { data, error } = await supabase.from("products").select("*").eq("brand_id", brandId).order("created_at", { ascending: false });
       if (error) throw error;
-      return data as Product[];
+      return (data ?? []).map((p: any) => ({ ...p, media: Array.isArray(p.media) ? p.media : [] })) as Product[];
     },
   });
 
@@ -226,18 +238,45 @@ function ProductsSection({ products, variants, businessName, onChanged }: { prod
 
 function ProductDialog({ product, onSaved }: { product: Product | null; onSaved: () => void }) {
   const t = useT();
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
   const [form, setForm] = useState({
     name: product?.name ?? "",
     description: product?.description ?? "",
     category: product?.category ?? "",
     image_url: product?.image_url ?? "",
+    is_active: product?.is_active ?? true,
+    media: (product?.media ?? []) as MediaItem[],
   });
+  const [uploading, setUploading] = useState(false);
+  const mediaInput = useState<HTMLInputElement | null>(null);
+
+  const uploadMedia = async (file: File) => {
+    try {
+      setUploading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const ext = file.name.split(".").pop() ?? "bin";
+      const path = `${user.id}/brand-media/product-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("invoice-assets").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data, error: se } = await supabase.storage.from("invoice-assets").createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+      if (se || !data) throw se ?? new Error("Failed to sign URL");
+      const type: "image" | "video" = file.type.startsWith("video") ? "video" : "image";
+      setForm((f) => ({ ...f, media: [...f.media, { type, url: data.signedUrl }] }));
+      toast.success(isAr ? "تم الرفع" : "Uploaded");
+    } catch (e: any) {
+      toast.error(e.message ?? "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const save = async () => {
     if (!form.name.trim()) return toast.error(t("inventory.name"));
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const payload = { ...form, user_id: user.id };
+    const payload = { ...form, user_id: user.id, media: form.media as any };
     const { error } = product
       ? await supabase.from("products").update(payload).eq("id", product.id)
       : await (supabase.from("products") as any).insert(payload);
@@ -246,18 +285,58 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   };
 
   return (
-    <DialogContent>
+    <DialogContent className="max-h-[90vh] overflow-y-auto">
       <DialogHeader><DialogTitle>{product ? t("inventory.editProduct") : t("inventory.newProduct")}</DialogTitle></DialogHeader>
       <div className="space-y-3">
         <div><Label>{t("inventory.name")}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
         <div><Label>{t("inventory.category")}</Label><Input placeholder={t("inventory.categoryPh")} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></div>
         <div><Label>{t("inventory.imageUrl")}</Label><Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} /></div>
         <div><Label>{t("inventory.description")}</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+
+        <div className="flex items-center justify-between rounded-md border border-border p-3">
+          <div>
+            <p className="text-sm font-medium">{isAr ? "المنتج مفعّل في المتجر" : "Active in storefront"}</p>
+            <p className="text-xs text-muted-foreground">{isAr ? "إظهار للعملاء في المتجر العام" : "Show to customers in the public storefront"}</p>
+          </div>
+          <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
+        </div>
+
+        <div className="space-y-2">
+          <Label>{isAr ? "وسائط المنتج (صور/فيديو)" : "Product media (images / videos)"}</Label>
+          <div className="flex flex-wrap gap-2">
+            {form.media.map((m, i) => (
+              <div key={i} className="relative w-20 h-20 rounded-md border border-border overflow-hidden bg-secondary">
+                {m.type === "video" ? (
+                  <video src={m.url} className="w-full h-full object-cover" muted />
+                ) : (
+                  <img src={m.url} alt="" className="w-full h-full object-cover" />
+                )}
+                <button
+                  type="button"
+                  className="absolute top-0.5 end-0.5 bg-background/80 rounded-full p-0.5"
+                  onClick={() => setForm({ ...form, media: form.media.filter((_, j) => j !== i) })}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+            <label className="w-20 h-20 rounded-md border border-dashed border-border flex items-center justify-center text-xs text-muted-foreground cursor-pointer hover:bg-secondary">
+              {uploading ? "…" : <Plus className="h-4 w-4" />}
+              <input
+                type="file"
+                accept="image/*,video/*"
+                className="hidden"
+                onChange={(e) => e.target.files?.[0] && uploadMedia(e.target.files[0])}
+              />
+            </label>
+          </div>
+        </div>
       </div>
       <DialogFooter><Button onClick={save}>{t("common.save")}</Button></DialogFooter>
     </DialogContent>
   );
 }
+
 
 function VariantList({ productId, productName, businessName, variants, onChanged }: { productId: string; productName: string; businessName: string | null; variants: Variant[]; onChanged: () => void }) {
   const t = useT();
