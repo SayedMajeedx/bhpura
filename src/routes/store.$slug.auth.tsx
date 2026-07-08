@@ -8,18 +8,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2, User, LogIn } from "lucide-react";
+import { Loader2, User, LogIn, MailCheck } from "lucide-react";
+import { translateAuthError } from "@/lib/auth-errors";
 
 export const Route = createFileRoute("/store/$slug/auth")({
   component: StorefrontAuth,
 });
 
 function StorefrontAuth() {
-  const { brand, settings, t, session } = useStorefront();
+  const { brand, settings, t, lang, session } = useStorefront();
   const navigate = useNavigate();
   const [tab, setTab] = useState<"signin" | "signup">("signin");
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
   const [working, setWorking] = useState(false);
+  const [pendingVerification, setPendingVerification] = useState<string | null>(null);
 
   if (session) {
     // Already signed in — bounce back to checkout / home
@@ -47,7 +49,7 @@ function StorefrontAuth() {
     }
     setWorking(true);
     const { error } = await supabase.auth.signInWithPassword({ email: form.email.trim(), password: form.password });
-    if (error) { setWorking(false); return toast.error(error.message); }
+    if (error) { setWorking(false); return toast.error(translateAuthError(error, lang as any)); }
     await link(form.name, form.phone);
     setWorking(false);
     toast.success(t("مرحبًا بعودتك!", "Welcome back!"));
@@ -60,7 +62,7 @@ function StorefrontAuth() {
       return;
     }
     setWorking(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: form.email.trim(),
       password: form.password,
       options: {
@@ -68,9 +70,25 @@ function StorefrontAuth() {
         emailRedirectTo: `${window.location.origin}/store/${brand.slug}`,
       },
     });
-    if (error) { setWorking(false); return toast.error(error.message); }
-    await link(form.name, form.phone);
+    if (error) { setWorking(false); return toast.error(translateAuthError(error, lang as any)); }
     setWorking(false);
+
+    // If email confirmation is required, Supabase returns a user but no session.
+    const needsVerify = !data.session;
+    if (needsVerify) {
+      setPendingVerification(form.email.trim());
+      toast.success(
+        t(
+          "تحقق من بريدك الإلكتروني لتأكيد الحساب قبل تسجيل الدخول.",
+          "Check your email to verify your account before signing in.",
+        ),
+        { duration: 8000 },
+      );
+      return;
+    }
+
+    // Already signed in (email confirmation disabled) — link + go to checkout.
+    await link(form.name, form.phone);
     toast.success(t("تم إنشاء الحساب!", "Account created!"));
     navigate({ to: "/store/$slug/checkout", params: { slug: brand.slug } });
   };
