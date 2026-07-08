@@ -151,7 +151,7 @@ function StoreShell() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="min-h-screen w-full max-w-full overflow-x-hidden flex flex-col"
       style={
         {
           backgroundColor: settings.background_color,
