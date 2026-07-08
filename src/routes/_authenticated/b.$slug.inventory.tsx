@@ -283,19 +283,17 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     },
   });
 
-  const uploadMedia = async (file: File) => {
+  const uploadBlob = async (blob: Blob, ext: string, kind: "image" | "video") => {
     try {
       setUploading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const ext = file.name.split(".").pop() ?? "bin";
       const path = `${user.id}/brand-media/product-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("invoice-assets").upload(path, file, { upsert: true });
+      const { error } = await supabase.storage.from("invoice-assets").upload(path, blob, { upsert: true, contentType: kind === "image" ? "image/jpeg" : blob.type });
       if (error) throw error;
       const { data, error: se } = await supabase.storage.from("invoice-assets").createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
       if (se || !data) throw se ?? new Error("Failed to sign URL");
-      const type: "image" | "video" = file.type.startsWith("video") ? "video" : "image";
-      setForm((f) => ({ ...f, media: [...f.media, { type, url: data.signedUrl }] }));
+      setForm((f) => ({ ...f, media: [...f.media, { type: kind, url: data.signedUrl }] }));
       toast.success(isAr ? "تم الرفع" : "Uploaded");
     } catch (e: any) {
       toast.error(e.message ?? "Upload failed");
@@ -303,6 +301,25 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       setUploading(false);
     }
   };
+
+  const handleFilePicked = (file: File) => {
+    if (file.type.startsWith("video")) {
+      const ext = file.name.split(".").pop() ?? "mp4";
+      setPendingVideo(file);
+      void uploadBlob(file, ext, "video").finally(() => setPendingVideo(null));
+      return;
+    }
+    // Route images through the interactive cropper
+    const reader = new FileReader();
+    reader.onload = () => setCropSrc(String(reader.result));
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropConfirmed = async (blob: Blob) => {
+    await uploadBlob(blob, "jpg", "image");
+    setCropSrc(null);
+  };
+
 
   const save = async () => {
     if (!form.name.trim()) return toast.error(t("inventory.name"));
