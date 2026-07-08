@@ -273,7 +273,7 @@ export type Database = {
           {
             foreignKeyName: "business_settings_brand_id_fkey"
             columns: ["brand_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "brands"
             referencedColumns: ["id"]
           },
@@ -1029,7 +1029,7 @@ export type Database = {
           {
             foreignKeyName: "business_settings_brand_id_fkey"
             columns: ["brand_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "brands"
             referencedColumns: ["id"]
           },
