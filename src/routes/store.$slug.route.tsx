@@ -40,16 +40,17 @@ export const Route = createFileRoute("/store/$slug")({
 
     const s = settings as any;
     const rawPages = Array.isArray(s?.pages) ? s.pages : [];
-    const normalizedPages = Array.from({ length: 5 }, (_, i) => {
-      const p = rawPages[i] ?? {};
-      return {
-        title_ar: p.title_ar ?? null,
-        title_en: p.title_en ?? null,
-        content_ar: p.content_ar ?? null,
-        content_en: p.content_en ?? null,
-        image_url: p.image_url ?? null,
-      };
-    });
+    const normalizedPages = rawPages.map((p: any) => ({
+      title_ar: p?.title_ar ?? null,
+      title_en: p?.title_en ?? null,
+      content_ar: p?.content_ar ?? null,
+      content_en: p?.content_en ?? null,
+      image_url: p?.image_url ?? null,
+    }));
+    const rawSocials = Array.isArray(s?.socials) ? s.socials : [];
+    const normalizedSocials = rawSocials
+      .map((x: any) => ({ name: String(x?.name ?? "").trim(), url: String(x?.url ?? "").trim() }))
+      .filter((x: { name: string; url: string }) => x.name && x.url);
     const safeSettings: PublicSettings = {
       brand_id: brand.id,
       business_name: s?.business_name ?? brand.name_en,
