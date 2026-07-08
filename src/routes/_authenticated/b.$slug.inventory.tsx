@@ -53,7 +53,7 @@ function Inventory() {
     queryFn: async () => {
       const { data, error } = await supabase.from("products").select("*").eq("brand_id", brandId).order("created_at", { ascending: false });
       if (error) throw error;
-      return data as Product[];
+      return (data ?? []).map((p: any) => ({ ...p, media: Array.isArray(p.media) ? p.media : [] })) as Product[];
     },
   });
 
