@@ -18,6 +18,7 @@ import { useProfile } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { Switch } from "@/components/ui/switch";
+import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 
 export const Route = createFileRoute("/_authenticated/b/$slug/inventory")({
   component: Inventory,
@@ -251,6 +252,8 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   };
   const [form, setForm] = useState(initialForm);
   const [uploading, setUploading] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [pendingVideo, setPendingVideo] = useState<File | null>(null);
   const mediaInput = useState<HTMLInputElement | null>(null);
 
   // Re-sync form whenever the edited product changes (or the dialog is reopened
@@ -280,19 +283,17 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     },
   });
 
-  const uploadMedia = async (file: File) => {
+  const uploadBlob = async (blob: Blob, ext: string, kind: "image" | "video") => {
     try {
       setUploading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const ext = file.name.split(".").pop() ?? "bin";
       const path = `${user.id}/brand-media/product-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("invoice-assets").upload(path, file, { upsert: true });
+      const { error } = await supabase.storage.from("invoice-assets").upload(path, blob, { upsert: true, contentType: kind === "image" ? "image/jpeg" : blob.type });
       if (error) throw error;
       const { data, error: se } = await supabase.storage.from("invoice-assets").createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
       if (se || !data) throw se ?? new Error("Failed to sign URL");
-      const type: "image" | "video" = file.type.startsWith("video") ? "video" : "image";
-      setForm((f) => ({ ...f, media: [...f.media, { type, url: data.signedUrl }] }));
+      setForm((f) => ({ ...f, media: [...f.media, { type: kind, url: data.signedUrl }] }));
       toast.success(isAr ? "تم الرفع" : "Uploaded");
     } catch (e: any) {
       toast.error(e.message ?? "Upload failed");
@@ -300,6 +301,25 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       setUploading(false);
     }
   };
+
+  const handleFilePicked = (file: File) => {
+    if (file.type.startsWith("video")) {
+      const ext = file.name.split(".").pop() ?? "mp4";
+      setPendingVideo(file);
+      void uploadBlob(file, ext, "video").finally(() => setPendingVideo(null));
+      return;
+    }
+    // Route images through the interactive cropper
+    const reader = new FileReader();
+    reader.onload = () => setCropSrc(String(reader.result));
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropConfirmed = async (blob: Blob) => {
+    await uploadBlob(blob, "jpg", "image");
+    setCropSrc(null);
+  };
+
 
   const save = async () => {
     if (!form.name.trim()) return toast.error(t("inventory.name"));
@@ -393,12 +413,25 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                 type="file"
                 accept="image/*,video/*"
                 className="hidden"
-                onChange={(e) => e.target.files?.[0] && uploadMedia(e.target.files[0])}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleFilePicked(f);
+                  e.currentTarget.value = "";
+                }}
               />
             </label>
           </div>
         </div>
       </div>
+      <ImageCropperDialog
+        open={!!cropSrc}
+        imageSrc={cropSrc}
+        aspect={3 / 4}
+        busy={uploading}
+        onCancel={() => setCropSrc(null)}
+        onConfirm={handleCropConfirmed}
+      />
+      {pendingVideo && null}
       <DialogFooter><Button onClick={save}>{t("common.save")}</Button></DialogFooter>
     </DialogContent>
   );
