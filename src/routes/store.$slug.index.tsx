@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useStorefront, formatPrice } from "@/lib/storefront-context";
+import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState, useEffect, useRef } from "react";
@@ -13,7 +13,11 @@ export const Route = createFileRoute("/store/$slug/")({
 type ProductRow = {
   id: string;
   name: string;
+  name_ar: string | null;
+  name_en: string | null;
   description: string | null;
+  description_ar: string | null;
+  description_en: string | null;
   category: string | null;
   image_url: string | null;
   media: unknown;
