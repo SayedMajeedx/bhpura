@@ -108,26 +108,19 @@ function StorefrontAuth() {
 
         {pendingVerification && (
           <div
-            className="rounded-lg border p-4 flex gap-3 items-start"
-            style={{
-              borderColor: settings.primary_color,
-              backgroundColor: `${settings.primary_color}10`,
-              color: settings.text_color,
-            }}
+            className="rounded-lg border-2 p-4 flex gap-3 items-start bg-white"
+            style={{ borderColor: settings.primary_color, color: "#111827" }}
             role="status"
             aria-live="polite"
           >
             <MailCheck className="h-5 w-5 mt-0.5 shrink-0" style={{ color: settings.primary_color }} />
-            <div className="text-sm space-y-1">
-              <div className="font-semibold">
+            <div className="text-sm space-y-1 text-slate-900">
+              <div className="font-semibold text-base" style={{ color: settings.primary_color }}>
                 {t("تحقّق من بريدك الإلكتروني", "Check your email")}
               </div>
-              <div>
-                {t(
-                  "أرسلنا رسالة تفعيل إلى",
-                  "We've sent a verification link to",
-                )}{" "}
-                <span className="font-mono">{pendingVerification}</span>.{" "}
+              <div className="text-slate-800">
+                {t("أرسلنا رسالة تفعيل إلى", "We've sent a verification link to")}{" "}
+                <span className="font-mono font-semibold text-slate-900">{pendingVerification}</span>.{" "}
                 {t(
                   "افتح الرسالة واضغط على الرابط لتفعيل حسابك ثم عُد لتسجيل الدخول.",
                   "Open it and click the link to activate your account, then come back to sign in.",
@@ -135,7 +128,8 @@ function StorefrontAuth() {
               </div>
               <button
                 type="button"
-                className="mt-1 underline text-xs"
+                className="mt-1 underline text-xs font-medium"
+                style={{ color: settings.primary_color }}
                 onClick={() => { setPendingVerification(null); setTab("signin"); }}
               >
                 {t("تسجيل الدخول الآن", "Go to sign in")}
@@ -143,6 +137,7 @@ function StorefrontAuth() {
             </div>
           </div>
         )}
+
 
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
