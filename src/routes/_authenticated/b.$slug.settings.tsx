@@ -14,6 +14,8 @@ import { useT, useI18n } from "@/lib/i18n";
 import { PhoneInput } from "@/components/phone-input";
 import { Rnd } from "react-rnd";
 import { useBrand } from "@/lib/brand-context";
+import { Switch } from "@/components/ui/switch";
+import { Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/b/$slug/settings")({
   component: Settings,
@@ -294,7 +296,11 @@ function Settings() {
           </Card>
         )}
 
+        <PaymentSettingsCard brandId={brandId} />
+        <BrandHeroCard brandId={brandId} />
+
         <div className="flex justify-end"><Button onClick={save}>{t("settings.save")}</Button></div>
+
       </div>
     </div>
   );
