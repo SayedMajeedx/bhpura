@@ -6,6 +6,7 @@ import {
   StorefrontProvider,
   useStorefront,
   formatPrice,
+  pickName,
   type Brand,
   type PublicSettings,
   readableOn,
@@ -353,15 +354,17 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
               {t("السلة فارغة", "Your cart is empty")}
             </div>
           ) : (
-            cart.map((item) => (
+            cart.map((item) => {
+              const displayName = pickName(lang, { name: item.name, name_ar: item.name_ar, name_en: item.name_en });
+              return (
               <div key={item.variant_id} className="flex gap-3 border rounded-lg p-2 items-center">
                 {item.image ? (
-                  <img src={item.image} alt={item.name} className="h-16 w-16 rounded object-cover shrink-0" />
+                  <img src={item.image} alt={displayName} className="h-16 w-16 rounded object-cover shrink-0" />
                 ) : (
                   <div className="h-16 w-16 rounded bg-muted shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{item.name}</div>
+                  <div className="font-medium truncate">{displayName}</div>
                   <div className="text-xs text-muted-foreground">
                     {[item.size, item.color].filter(Boolean).join(" · ")}
                   </div>
