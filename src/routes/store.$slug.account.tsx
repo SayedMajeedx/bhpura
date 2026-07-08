@@ -21,6 +21,7 @@ export const Route = createFileRoute("/store/$slug/account")({
 type Customer = {
   id: string;
   brand_id: string;
+  user_id: string;
   name: string;
   phone: string | null;
   email: string | null;
