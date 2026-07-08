@@ -250,23 +250,27 @@ function ProductGrid({ products, loading }: { products: ProductRow[]; loading: b
   const { t } = useStorefront();
   if (loading) {
     return (
-      <div id="products" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <Skeleton key={i} className="aspect-[3/4] rounded-xl" />
+      <div id="products" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="space-y-2">
+            <Skeleton className="aspect-[3/4] rounded-xl w-full" />
+            <Skeleton className="h-3 w-3/4" />
+            <Skeleton className="h-3 w-1/3" />
+          </div>
         ))}
       </div>
     );
   }
   if (products.length === 0) {
     return (
-      <Card id="products" className="p-12 text-center text-muted-foreground">
+      <Card id="products" className="p-8 sm:p-12 text-center text-muted-foreground">
         {t("لا توجد منتجات بعد.", "No products yet.")}
       </Card>
     );
   }
 
   return (
-    <div id="products" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+    <div id="products" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
       {products.map((p) => (
         <ProductCard key={p.id} product={p} />
       ))}
