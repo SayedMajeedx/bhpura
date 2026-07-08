@@ -637,6 +637,8 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     btn_primary_fg: string | null;
     btn_secondary_bg: string | null;
     btn_secondary_fg: string | null;
+    btn_checkout_bg: string | null;
+    btn_checkout_fg: string | null;
   } | null>(null);
 
   const { data } = useQuery({
