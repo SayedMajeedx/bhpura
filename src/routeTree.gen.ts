@@ -27,12 +27,14 @@ import { Route as AuthenticatedBrandsRouteImport } from './routes/_authenticated
 import { Route as StoreSlugRouteRouteImport } from './routes/store.$slug.route'
 import { Route as StoreSlugIndexRouteImport } from './routes/store.$slug.index'
 import { Route as StoreSlugCheckoutRouteImport } from './routes/store.$slug.checkout'
+import { Route as StoreSlugAuthRouteImport } from './routes/store.$slug.auth'
 import { Route as AuthenticatedBSlugRouteRouteImport } from './routes/_authenticated/b.$slug.route'
 import { Route as StoreSlugThankYouOrderIdRouteImport } from './routes/store.$slug.thank-you.$orderId'
 import { Route as StoreSlugProductIdRouteImport } from './routes/store.$slug.product.$id'
 import { Route as AuthenticatedBSlugTeamRouteImport } from './routes/_authenticated/b.$slug.team'
 import { Route as AuthenticatedBSlugSettingsRouteImport } from './routes/_authenticated/b.$slug.settings'
 import { Route as AuthenticatedBSlugInventoryRouteImport } from './routes/_authenticated/b.$slug.inventory'
+import { Route as AuthenticatedBSlugIntegrationsRouteImport } from './routes/_authenticated/b.$slug.integrations'
 import { Route as AuthenticatedBSlugExpensesRouteImport } from './routes/_authenticated/b.$slug.expenses'
 import { Route as AuthenticatedBSlugDashboardRouteImport } from './routes/_authenticated/b.$slug.dashboard'
 import { Route as AuthenticatedBSlugCustomersRouteImport } from './routes/_authenticated/b.$slug.customers'
@@ -129,6 +131,11 @@ const StoreSlugCheckoutRoute = StoreSlugCheckoutRouteImport.update({
   path: '/checkout',
   getParentRoute: () => StoreSlugRouteRoute,
 } as any)
+const StoreSlugAuthRoute = StoreSlugAuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => StoreSlugRouteRoute,
+} as any)
 const AuthenticatedBSlugRouteRoute = AuthenticatedBSlugRouteRouteImport.update({
   id: '/b/$slug',
   path: '/b/$slug',
@@ -160,6 +167,12 @@ const AuthenticatedBSlugInventoryRoute =
   AuthenticatedBSlugInventoryRouteImport.update({
     id: '/inventory',
     path: '/inventory',
+    getParentRoute: () => AuthenticatedBSlugRouteRoute,
+  } as any)
+const AuthenticatedBSlugIntegrationsRoute =
+  AuthenticatedBSlugIntegrationsRouteImport.update({
+    id: '/integrations',
+    path: '/integrations',
     getParentRoute: () => AuthenticatedBSlugRouteRoute,
   } as any)
 const AuthenticatedBSlugExpensesRoute =
@@ -216,12 +229,14 @@ export interface FileRoutesByFullPath {
   '/team': typeof AuthenticatedTeamRoute
   '/invoice/$id': typeof InvoiceIdRoute
   '/b/$slug': typeof AuthenticatedBSlugRouteRouteWithChildren
+  '/store/$slug/auth': typeof StoreSlugAuthRoute
   '/store/$slug/checkout': typeof StoreSlugCheckoutRoute
   '/store/$slug/': typeof StoreSlugIndexRoute
   '/b/$slug/campaigns': typeof AuthenticatedBSlugCampaignsRoute
   '/b/$slug/customers': typeof AuthenticatedBSlugCustomersRoute
   '/b/$slug/dashboard': typeof AuthenticatedBSlugDashboardRoute
   '/b/$slug/expenses': typeof AuthenticatedBSlugExpensesRoute
+  '/b/$slug/integrations': typeof AuthenticatedBSlugIntegrationsRoute
   '/b/$slug/inventory': typeof AuthenticatedBSlugInventoryRoute
   '/b/$slug/settings': typeof AuthenticatedBSlugSettingsRoute
   '/b/$slug/team': typeof AuthenticatedBSlugTeamRoute
@@ -246,12 +261,14 @@ export interface FileRoutesByTo {
   '/team': typeof AuthenticatedTeamRoute
   '/invoice/$id': typeof InvoiceIdRoute
   '/b/$slug': typeof AuthenticatedBSlugRouteRouteWithChildren
+  '/store/$slug/auth': typeof StoreSlugAuthRoute
   '/store/$slug/checkout': typeof StoreSlugCheckoutRoute
   '/store/$slug': typeof StoreSlugIndexRoute
   '/b/$slug/campaigns': typeof AuthenticatedBSlugCampaignsRoute
   '/b/$slug/customers': typeof AuthenticatedBSlugCustomersRoute
   '/b/$slug/dashboard': typeof AuthenticatedBSlugDashboardRoute
   '/b/$slug/expenses': typeof AuthenticatedBSlugExpensesRoute
+  '/b/$slug/integrations': typeof AuthenticatedBSlugIntegrationsRoute
   '/b/$slug/inventory': typeof AuthenticatedBSlugInventoryRoute
   '/b/$slug/settings': typeof AuthenticatedBSlugSettingsRoute
   '/b/$slug/team': typeof AuthenticatedBSlugTeamRoute
@@ -279,12 +296,14 @@ export interface FileRoutesById {
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/invoice/$id': typeof InvoiceIdRoute
   '/_authenticated/b/$slug': typeof AuthenticatedBSlugRouteRouteWithChildren
+  '/store/$slug/auth': typeof StoreSlugAuthRoute
   '/store/$slug/checkout': typeof StoreSlugCheckoutRoute
   '/store/$slug/': typeof StoreSlugIndexRoute
   '/_authenticated/b/$slug/campaigns': typeof AuthenticatedBSlugCampaignsRoute
   '/_authenticated/b/$slug/customers': typeof AuthenticatedBSlugCustomersRoute
   '/_authenticated/b/$slug/dashboard': typeof AuthenticatedBSlugDashboardRoute
   '/_authenticated/b/$slug/expenses': typeof AuthenticatedBSlugExpensesRoute
+  '/_authenticated/b/$slug/integrations': typeof AuthenticatedBSlugIntegrationsRoute
   '/_authenticated/b/$slug/inventory': typeof AuthenticatedBSlugInventoryRoute
   '/_authenticated/b/$slug/settings': typeof AuthenticatedBSlugSettingsRoute
   '/_authenticated/b/$slug/team': typeof AuthenticatedBSlugTeamRoute
@@ -312,12 +331,14 @@ export interface FileRouteTypes {
     | '/team'
     | '/invoice/$id'
     | '/b/$slug'
+    | '/store/$slug/auth'
     | '/store/$slug/checkout'
     | '/store/$slug/'
     | '/b/$slug/campaigns'
     | '/b/$slug/customers'
     | '/b/$slug/dashboard'
     | '/b/$slug/expenses'
+    | '/b/$slug/integrations'
     | '/b/$slug/inventory'
     | '/b/$slug/settings'
     | '/b/$slug/team'
@@ -342,12 +363,14 @@ export interface FileRouteTypes {
     | '/team'
     | '/invoice/$id'
     | '/b/$slug'
+    | '/store/$slug/auth'
     | '/store/$slug/checkout'
     | '/store/$slug'
     | '/b/$slug/campaigns'
     | '/b/$slug/customers'
     | '/b/$slug/dashboard'
     | '/b/$slug/expenses'
+    | '/b/$slug/integrations'
     | '/b/$slug/inventory'
     | '/b/$slug/settings'
     | '/b/$slug/team'
@@ -374,12 +397,14 @@ export interface FileRouteTypes {
     | '/_authenticated/team'
     | '/invoice/$id'
     | '/_authenticated/b/$slug'
+    | '/store/$slug/auth'
     | '/store/$slug/checkout'
     | '/store/$slug/'
     | '/_authenticated/b/$slug/campaigns'
     | '/_authenticated/b/$slug/customers'
     | '/_authenticated/b/$slug/dashboard'
     | '/_authenticated/b/$slug/expenses'
+    | '/_authenticated/b/$slug/integrations'
     | '/_authenticated/b/$slug/inventory'
     | '/_authenticated/b/$slug/settings'
     | '/_authenticated/b/$slug/team'
@@ -527,6 +552,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoreSlugCheckoutRouteImport
       parentRoute: typeof StoreSlugRouteRoute
     }
+    '/store/$slug/auth': {
+      id: '/store/$slug/auth'
+      path: '/auth'
+      fullPath: '/store/$slug/auth'
+      preLoaderRoute: typeof StoreSlugAuthRouteImport
+      parentRoute: typeof StoreSlugRouteRoute
+    }
     '/_authenticated/b/$slug': {
       id: '/_authenticated/b/$slug'
       path: '/b/$slug'
@@ -567,6 +599,13 @@ declare module '@tanstack/react-router' {
       path: '/inventory'
       fullPath: '/b/$slug/inventory'
       preLoaderRoute: typeof AuthenticatedBSlugInventoryRouteImport
+      parentRoute: typeof AuthenticatedBSlugRouteRoute
+    }
+    '/_authenticated/b/$slug/integrations': {
+      id: '/_authenticated/b/$slug/integrations'
+      path: '/integrations'
+      fullPath: '/b/$slug/integrations'
+      preLoaderRoute: typeof AuthenticatedBSlugIntegrationsRouteImport
       parentRoute: typeof AuthenticatedBSlugRouteRoute
     }
     '/_authenticated/b/$slug/expenses': {
@@ -619,6 +658,7 @@ interface AuthenticatedBSlugRouteRouteChildren {
   AuthenticatedBSlugCustomersRoute: typeof AuthenticatedBSlugCustomersRoute
   AuthenticatedBSlugDashboardRoute: typeof AuthenticatedBSlugDashboardRoute
   AuthenticatedBSlugExpensesRoute: typeof AuthenticatedBSlugExpensesRoute
+  AuthenticatedBSlugIntegrationsRoute: typeof AuthenticatedBSlugIntegrationsRoute
   AuthenticatedBSlugInventoryRoute: typeof AuthenticatedBSlugInventoryRoute
   AuthenticatedBSlugSettingsRoute: typeof AuthenticatedBSlugSettingsRoute
   AuthenticatedBSlugTeamRoute: typeof AuthenticatedBSlugTeamRoute
@@ -632,6 +672,7 @@ const AuthenticatedBSlugRouteRouteChildren: AuthenticatedBSlugRouteRouteChildren
     AuthenticatedBSlugCustomersRoute: AuthenticatedBSlugCustomersRoute,
     AuthenticatedBSlugDashboardRoute: AuthenticatedBSlugDashboardRoute,
     AuthenticatedBSlugExpensesRoute: AuthenticatedBSlugExpensesRoute,
+    AuthenticatedBSlugIntegrationsRoute: AuthenticatedBSlugIntegrationsRoute,
     AuthenticatedBSlugInventoryRoute: AuthenticatedBSlugInventoryRoute,
     AuthenticatedBSlugSettingsRoute: AuthenticatedBSlugSettingsRoute,
     AuthenticatedBSlugTeamRoute: AuthenticatedBSlugTeamRoute,
@@ -674,6 +715,7 @@ const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface StoreSlugRouteRouteChildren {
+  StoreSlugAuthRoute: typeof StoreSlugAuthRoute
   StoreSlugCheckoutRoute: typeof StoreSlugCheckoutRoute
   StoreSlugIndexRoute: typeof StoreSlugIndexRoute
   StoreSlugProductIdRoute: typeof StoreSlugProductIdRoute
@@ -681,6 +723,7 @@ interface StoreSlugRouteRouteChildren {
 }
 
 const StoreSlugRouteRouteChildren: StoreSlugRouteRouteChildren = {
+  StoreSlugAuthRoute: StoreSlugAuthRoute,
   StoreSlugCheckoutRoute: StoreSlugCheckoutRoute,
   StoreSlugIndexRoute: StoreSlugIndexRoute,
   StoreSlugProductIdRoute: StoreSlugProductIdRoute,

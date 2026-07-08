@@ -44,6 +44,7 @@ export type StructuredAddress = {
   id?: string;
   label?: string | null;
   region?: string | null;
+  block?: string | null;
   road?: string | null;
   house?: string | null;
   flat?: string | null;
@@ -52,8 +53,8 @@ export type StructuredAddress = {
 
 /**
  * Translate common Arabic address terms into English equivalents so that
- * free-text address fields (Block/Road/House/Flat) render correctly on
- * the English invoice even when the user typed them in Arabic.
+ * free-text address fields render correctly on the English invoice even
+ * when the user typed them in Arabic.
  */
 const AR_ADDRESS_TERMS: Array<[RegExp, string]> = [
   [/مجمع/g, "Block"],
@@ -76,40 +77,47 @@ export function translateArabicAddressTerms(s: string | null | undefined, lang: 
   return out;
 }
 
+/** Compact one-line address for pickers and lists. */
 export function formatAddressLine(a: StructuredAddress | null | undefined, lang: "en" | "ar"): string {
   if (!a) return "";
   const region = regionLabel(a.region, lang);
+  const block = translateArabicAddressTerms(a.block?.trim() || "", lang);
   const road = translateArabicAddressTerms(a.road?.trim() || "", lang);
   const house = translateArabicAddressTerms(a.house?.trim() || "", lang);
   const flat = translateArabicAddressTerms(a.flat?.trim() || "", lang);
-  const parts = lang === "ar" ? [region, road, house, flat] : [flat, house, road, region];
+  const parts = lang === "ar"
+    ? [region, block, road, house, flat]
+    : [flat, house, road, block, region];
   const sep = lang === "ar" ? "، " : ", ";
   return parts.filter((p) => p && p.length > 0).join(sep);
 }
 
 /**
- * Detailed, labeled address for invoice bill-to.
- * AR: "المنطقة: X، طريق: Y، منزل: Z، شقة: W"
- * EN: "Flat W, House Z, Road Y, X"
- * Skips empty fields (flat is optional).
+ * Labeled multi-part address for invoices, order details, and thank-you pages.
+ * EN: "Block: 428, Road: 2825, House: 12, Flat: 4, Manama"
+ * AR: "المنطقة: المنامة، المجمع: 428، طريق: 2825، منزل: 12، شقة: 4"
+ * Flat is optional; empty fields are skipped.
  */
 export function formatAddressDetailed(a: StructuredAddress | null | undefined, lang: "en" | "ar"): string {
   if (!a) return "";
   const region = regionLabel(a.region, lang);
+  const block = translateArabicAddressTerms(a.block?.trim() || "", lang);
   const road = translateArabicAddressTerms(a.road?.trim() || "", lang);
   const house = translateArabicAddressTerms(a.house?.trim() || "", lang);
   const flat = translateArabicAddressTerms(a.flat?.trim() || "", lang);
   const parts: string[] = [];
   if (lang === "ar") {
     if (region) parts.push(`المنطقة: ${region}`);
+    if (block) parts.push(`المجمع: ${block}`);
     if (road) parts.push(`طريق: ${road}`);
     if (house) parts.push(`منزل: ${house}`);
     if (flat) parts.push(`شقة: ${flat}`);
     return parts.join("، ");
   }
-  if (flat) parts.push(`Flat ${flat}`);
-  if (house) parts.push(`House ${house}`);
-  if (road) parts.push(`Road ${road}`);
+  if (block) parts.push(`Block: ${block}`);
+  if (road) parts.push(`Road: ${road}`);
+  if (house) parts.push(`House: ${house}`);
+  if (flat) parts.push(`Flat: ${flat}`);
   if (region) parts.push(region);
   return parts.join(", ");
 }

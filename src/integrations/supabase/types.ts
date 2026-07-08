@@ -146,6 +146,8 @@ export type Database = {
           created_at: string
           currency: string
           default_tax_rate: number
+          delivery_enabled: boolean
+          delivery_fee: number
           email: string | null
           font_family: string
           font_size: number
@@ -159,6 +161,7 @@ export type Database = {
           logo_y: number
           next_invoice_number: number
           phone: string | null
+          pickup_enabled: boolean
           primary_color: string
           text_color: string
           updated_at: string
@@ -177,6 +180,8 @@ export type Database = {
           created_at?: string
           currency?: string
           default_tax_rate?: number
+          delivery_enabled?: boolean
+          delivery_fee?: number
           email?: string | null
           font_family?: string
           font_size?: number
@@ -190,6 +195,7 @@ export type Database = {
           logo_y?: number
           next_invoice_number?: number
           phone?: string | null
+          pickup_enabled?: boolean
           primary_color?: string
           text_color?: string
           updated_at?: string
@@ -208,6 +214,8 @@ export type Database = {
           created_at?: string
           currency?: string
           default_tax_rate?: number
+          delivery_enabled?: boolean
+          delivery_fee?: number
           email?: string | null
           font_family?: string
           font_size?: number
@@ -221,6 +229,7 @@ export type Database = {
           logo_y?: number
           next_invoice_number?: number
           phone?: string | null
+          pickup_enabled?: boolean
           primary_color?: string
           text_color?: string
           updated_at?: string
@@ -239,6 +248,7 @@ export type Database = {
       }
       customer_addresses: {
         Row: {
+          block: string | null
           brand_id: string
           created_at: string
           customer_id: string
@@ -253,6 +263,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          block?: string | null
           brand_id: string
           created_at?: string
           customer_id: string
@@ -267,6 +278,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          block?: string | null
           brand_id?: string
           created_at?: string
           customer_id?: string
@@ -300,6 +312,8 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
+          auth_user_id: string | null
+          block: string | null
           brand_id: string
           city: string | null
           created_at: string
@@ -317,6 +331,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          auth_user_id?: string | null
+          block?: string | null
           brand_id: string
           city?: string | null
           created_at?: string
@@ -334,6 +350,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          auth_user_id?: string | null
+          block?: string | null
           brand_id?: string
           city?: string | null
           created_at?: string
@@ -437,6 +455,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "expenses_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_credentials: {
+        Row: {
+          api_key: string | null
+          base_url: string | null
+          brand_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          provider: string
+          updated_at: string
+          webhook_secret: string | null
+        }
+        Insert: {
+          api_key?: string | null
+          base_url?: string | null
+          brand_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          provider: string
+          updated_at?: string
+          webhook_secret?: string | null
+        }
+        Update: {
+          api_key?: string | null
+          base_url?: string | null
+          brand_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          provider?: string
+          updated_at?: string
+          webhook_secret?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_credentials_brand_id_fkey"
             columns: ["brand_id"]
             isOneToOne: false
             referencedRelation: "brands"
@@ -580,6 +648,7 @@ export type Database = {
           currency: string
           customer_id: string | null
           discount: number
+          fulfillment_method: string
           id: string
           invoice_number: number
           notes: string | null
@@ -606,6 +675,7 @@ export type Database = {
           currency?: string
           customer_id?: string | null
           discount?: number
+          fulfillment_method?: string
           id?: string
           invoice_number: number
           notes?: string | null
@@ -632,6 +702,7 @@ export type Database = {
           currency?: string
           customer_id?: string | null
           discount?: number
+          fulfillment_method?: string
           id?: string
           invoice_number?: number
           notes?: string | null
@@ -852,10 +923,13 @@ export type Database = {
           card_enabled: boolean | null
           cod_enabled: boolean | null
           currency: string | null
+          delivery_enabled: boolean | null
+          delivery_fee: number | null
           font_family: string | null
           font_url: string | null
           footer_note: string | null
           logo_url: string | null
+          pickup_enabled: boolean | null
           primary_color: string | null
           text_color: string | null
         }
@@ -873,20 +947,40 @@ export type Database = {
     Functions: {
       can_access_brand: { Args: { _brand_id: string }; Returns: boolean }
       current_brand_id: { Args: never; Returns: string }
+      delete_brand: {
+        Args: { p_brand_id: string; p_hard?: boolean }
+        Returns: Json
+      }
       is_active: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       is_brand_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
-      place_storefront_order: {
-        Args: {
-          p_brand_slug: string
-          p_customer: Json
-          p_items: Json
-          p_notes?: string
-          p_payment_method: string
-        }
+      link_storefront_customer: {
+        Args: { p_brand_slug: string; p_name?: string; p_phone?: string }
         Returns: Json
       }
+      place_storefront_order:
+        | {
+            Args: {
+              p_brand_slug: string
+              p_customer: Json
+              p_items: Json
+              p_notes?: string
+              p_payment_method: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_brand_slug: string
+              p_customer: Json
+              p_fulfillment?: string
+              p_items: Json
+              p_notes?: string
+              p_payment_method: string
+            }
+            Returns: Json
+          }
       sync_order_stock: { Args: { p_order_id: string }; Returns: undefined }
     }
     Enums: {

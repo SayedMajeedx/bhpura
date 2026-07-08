@@ -49,7 +49,11 @@ export const Route = createFileRoute("/store/$slug")({
       benefit_enabled: settings?.benefit_enabled ?? false,
       benefit_qr_url: settings?.benefit_qr_url ?? null,
       footer_note: settings?.footer_note ?? null,
+      delivery_enabled: (settings as any)?.delivery_enabled ?? true,
+      pickup_enabled: (settings as any)?.pickup_enabled ?? true,
+      delivery_fee: Number((settings as any)?.delivery_fee ?? 0),
     };
+
 
     const heroArr = Array.isArray(brand.hero_media)
       ? (brand.hero_media as unknown as Array<{ type: "image" | "video"; url: string }>)

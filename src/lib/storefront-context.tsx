@@ -1,4 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo, type ReactNode } from "react";
+import type { Session } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 
 export type StoreLang = "ar" | "en";
 
@@ -27,6 +29,9 @@ export type PublicSettings = {
   benefit_enabled: boolean;
   benefit_qr_url: string | null;
   footer_note: string | null;
+  delivery_enabled: boolean;
+  pickup_enabled: boolean;
+  delivery_fee: number;
 };
 
 export type CartItem = {
@@ -56,6 +61,8 @@ type StoreCtx = {
   cartCount: number;
   cartTotal: number;
   currency: string;
+  session: Session | null;
+  signOut: () => Promise<void>;
 };
 
 const Ctx = createContext<StoreCtx | null>(null);
@@ -74,6 +81,7 @@ export function StorefrontProvider({
 
   const [lang, setLangState] = useState<StoreLang>("ar");
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [session, setSession] = useState<Session | null>(null);
 
   // Hydrate from localStorage
   useEffect(() => {
@@ -90,6 +98,13 @@ export function StorefrontProvider({
       localStorage.setItem(cartKey, JSON.stringify(cart));
     } catch {}
   }, [cart, cartKey]);
+
+  // Auth session — track for cross-brand shopper accounts
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
+    const { data } = supabase.auth.onAuthStateChange((_evt, s) => setSession(s));
+    return () => data.subscription.unsubscribe();
+  }, []);
 
   const setLang = useCallback(
     (l: StoreLang) => {
@@ -138,6 +153,10 @@ export function StorefrontProvider({
 
   const clearCart = useCallback(() => setCart([]), []);
 
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut();
+  }, []);
+
   const cartCount = useMemo(() => cart.reduce((s, c) => s + c.qty, 0), [cart]);
   const cartTotal = useMemo(() => cart.reduce((s, c) => s + c.qty * c.price, 0), [cart]);
 
@@ -156,6 +175,8 @@ export function StorefrontProvider({
     cartCount,
     cartTotal,
     currency: settings.currency || "BHD",
+    session,
+    signOut,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -55,7 +55,7 @@
   --secondary: oklch(0.97 0.004 20);
   --secondary-foreground: oklch(0.26 0.09 25);
   --muted: oklch(0.965 0.003 20);
-  --muted-foreground: oklch(0.5 0.02 25);
+  --muted-foreground: oklch(0.42 0.02 25);
   --accent: oklch(0.95 0.015 25);
   --accent-foreground: oklch(0.26 0.09 25);
   --destructive: oklch(0.55 0.18 25);
@@ -85,7 +85,7 @@
   --secondary: oklch(0.28 0.03 60);
   --secondary-foreground: oklch(0.95 0.01 80);
   --muted: oklch(0.28 0.03 60);
-  --muted-foreground: oklch(0.72 0.02 70);
+  --muted-foreground: oklch(0.82 0.02 70);
   --accent: oklch(0.32 0.03 60);
   --accent-foreground: oklch(0.95 0.01 80);
   --destructive: oklch(0.6 0.2 25);
@@ -112,7 +112,29 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
   h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0.01em; }
+
+  /* Guarantee AA-legible form controls regardless of surrounding brand color styles. */
+  input,
+  textarea,
+  select {
+    color: var(--color-foreground);
+    background-color: var(--color-background);
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-muted-foreground);
+    opacity: 1;
+  }
+  /* Radix Select trigger + value text (dropdowns) */
+  [data-slot="select-value"],
+  [data-radix-select-value],
+  [data-slot="select-trigger"] {
+    color: var(--color-foreground);
+  }
+  /* Table cells inherit foreground so custom bg containers don't hide text */
+  th, td { color: inherit; }
 }
+
 
 html.lang-ar body,
 html.lang-ar h1,

@@ -296,8 +296,10 @@ function Settings() {
           </Card>
         )}
 
+        <ShippingSettingsCard brandId={brandId} />
         <PaymentSettingsCard brandId={brandId} />
         <BrandHeroCard brandId={brandId} />
+
 
         <div className="flex justify-end"><Button onClick={save}>{t("settings.save")}</Button></div>
 
@@ -533,6 +535,83 @@ function BrandHeroCard({ brandId }: { brandId: string }) {
 
       <div className="flex justify-end">
         <Button size="sm" onClick={save} disabled={saving}>{isAr ? "حفظ واجهة المتجر" : "Save storefront hero"}</Button>
+      </div>
+    </Card>
+  );
+}
+
+function ShippingSettingsCard({ brandId }: { brandId: string }) {
+  const t = useT();
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
+  const qc = useQueryClient();
+  const [saving, setSaving] = useState(false);
+  const [state, setState] = useState<{ delivery_enabled: boolean; pickup_enabled: boolean; delivery_fee: number } | null>(null);
+
+  const { data } = useQuery({
+    queryKey: ["business-settings-shipping", brandId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("business_settings")
+        .select("delivery_enabled, pickup_enabled, delivery_fee")
+        .eq("brand_id", brandId).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  useEffect(() => {
+    if (data) setState({
+      delivery_enabled: (data as any).delivery_enabled ?? true,
+      pickup_enabled: (data as any).pickup_enabled ?? true,
+      delivery_fee: Number((data as any).delivery_fee ?? 0),
+    });
+  }, [data]);
+
+  const save = async () => {
+    if (!state) return;
+    setSaving(true);
+    const { error } = await (supabase.from("business_settings") as any).update({
+      delivery_enabled: state.delivery_enabled,
+      pickup_enabled: state.pickup_enabled,
+      delivery_fee: state.delivery_fee,
+    }).eq("brand_id", brandId);
+    setSaving(false);
+    if (error) toast.error(error.message);
+    else { toast.success(isAr ? "تم الحفظ" : "Saved"); qc.invalidateQueries({ queryKey: ["business-settings-shipping", brandId] }); }
+  };
+
+  if (!state) return null;
+
+  return (
+    <Card className="p-6 space-y-4">
+      <div>
+        <h2 className="font-display text-xl">{t("settings.shippingTitle")}</h2>
+        <p className="text-sm text-muted-foreground">{t("settings.shippingSubtitle")}</p>
+      </div>
+
+      <div className="flex items-center justify-between rounded-md border border-border p-3">
+        <p className="text-sm font-medium">{t("settings.deliveryEnabled")}</p>
+        <Switch checked={state.delivery_enabled} onCheckedChange={(v) => setState({ ...state, delivery_enabled: v })} />
+      </div>
+      <div className="flex items-center justify-between rounded-md border border-border p-3">
+        <p className="text-sm font-medium">{t("settings.pickupEnabled")}</p>
+        <Switch checked={state.pickup_enabled} onCheckedChange={(v) => setState({ ...state, pickup_enabled: v })} />
+      </div>
+
+      <div>
+        <Label>{t("settings.deliveryFee")}</Label>
+        <Input
+          type="number"
+          step="0.01"
+          min={0}
+          value={state.delivery_fee}
+          onChange={(e) => setState({ ...state, delivery_fee: Math.max(0, Number(e.target.value)) })}
+          disabled={!state.delivery_enabled}
+        />
+        <p className="text-xs text-muted-foreground mt-1">{t("settings.deliveryFeeHint")}</p>
+      </div>
+
+      <div className="flex justify-end">
+        <Button size="sm" onClick={save} disabled={saving}>{t("settings.save")}</Button>
       </div>
     </Card>
   );

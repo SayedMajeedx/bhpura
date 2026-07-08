@@ -1,101 +1,68 @@
-# Public Storefront + Payments + Realtime + Localization
+## 1. Manage Brands — Edit & Delete
 
-## 1. Database migration (schema + policies)
+`/brands` (Super Admin) will get per-card **Edit** and **Delete** actions.
 
-**New columns**
-- `products`: `is_active bool default true`, `media jsonb default '[]'` (array of `{type:'image'|'video', url}`)
-- `product_variants`: no schema change (stock already there)
-- `brands`: hero media (`hero_media jsonb default '[]'`, `hero_video_url text`, `primary_color text`, `about_ar text`, `about_en text`)
-- `business_settings`: `cod_enabled bool default true`, `card_enabled bool default false`, `benefit_enabled bool default false`, `benefit_qr_url text`
-- `orders`: `channel text default 'admin'` (values: `admin`, `storefront`), allow `user_id` nullable OR set to brand owner for storefront orders — simpler: keep `user_id NOT NULL` and set it to the brand's `created_by` on storefront insert
-- `customers`: same — set `user_id` = brand owner for guest customers created via storefront
+- **Edit dialog** (reuses `NewBrandDialog` shape): name_en, name_ar, logo URL + upload button, primary color picker, about_en/about_ar textareas, is_active toggle. Slug is shown read-only (changing a slug would break URLs, invoices, storefront links).
+- **Delete dialog** with a red confirmation warning listing what will be affected (products, orders, customers, storefront). To keep data safe by default we use a **soft-delete**: sets `is_active = false` and appends a `-deleted-<timestamp>` suffix to the slug so the name can be reused. A checkbox "Permanently delete (destructive)" is only offered when the brand has zero orders/products; the backend enforces this via a new `delete_brand(brand_id, hard)` SECURITY DEFINER RPC restricted to super admin.
 
-**Public read policies (anon)**
-- `brands`: add `SELECT TO anon USING (is_active)` — safe public columns already
-- `products`: `SELECT TO anon USING (is_active AND EXISTS(brand active))`
-- `product_variants`: `SELECT TO anon USING (EXISTS(product active))`
-- `business_settings`: create a public view `public.brand_public_settings` (security_invoker) exposing only logo, colors, currency, name, benefit_qr_url, payment toggles; grant SELECT to anon
-- `customers`, `orders`, `order_items`: no anon SELECT. Instead expose a SECURITY DEFINER RPC `place_storefront_order(p_brand_id, p_customer jsonb, p_items jsonb, p_payment_method text, p_notes text)` that:
-  1. Validates brand active + payment method enabled
-  2. Inserts/updates customer (dedupe by phone within brand)
-  3. Inserts order with `channel='storefront'`, `status='pending'`, `user_id = brand owner`
-  4. Inserts order_items
-  5. Calls stock deduction inline (bypass existing `sync_order_stock` which checks `auth.uid()`) — write a new helper `deduct_storefront_stock(p_order_id)` that runs as definer
-  6. Returns `{order_id, invoice_number}`
-- Grant EXECUTE on RPC to anon
+## 2. Bahraini Shipping Address Structure
 
-**Realtime**
-- `ALTER PUBLICATION supabase_realtime ADD TABLE products, product_variants, orders, customers;`
+Add a **Block** field everywhere and standardise the six fields:
+Label / Region / Block / Road / House / Flat.
 
-**Storage**
-- Reuse `invoice-assets` bucket; add public read policy for `brand-media/*` prefix, or create new public bucket `brand-media` for hero videos/product videos/benefit QR
+**Schema (migration):**
+- `ALTER TABLE customers ADD COLUMN block text;`
+- `ALTER TABLE customer_addresses ADD COLUMN block text;`
+- Update `place_storefront_order` RPC to accept and persist `block` on the customer row *and* to insert a matching `customer_addresses` row (label defaults to "Home") linked to the new order via `orders.shipping_address_id`.
 
-## 2. Storefront routes (`/store/$slug/*`)
+**Admin portal (orders detail):** the customer form and saved-address picker gain a Block field; `formatDeliveryAddress` in `bahrain-regions.ts` is extended to include it and to render each part with a labelled prefix (`Block: 123, Road: 456, House: 12, Flat: 4`) — both Arabic and English.
 
-Files created:
-- `src/routes/store.$slug.route.tsx` — layout: loads brand + public settings, provides context (brand, settings, cart, lang), renders header/footer + `<Outlet />`
-- `src/routes/store.$slug.index.tsx` — hero banner (image or autoplay muted looping video), featured products grid, categories
-- `src/routes/store.$slug.products.tsx` — full catalog with filters (category, price, in-stock)
-- `src/routes/store.$slug.product.$id.tsx` — product detail: media carousel (images + `<video controls>` clips), variant selector, add-to-cart
-- `src/routes/store.$slug.checkout.tsx` — cart review, customer info form, address, payment method radio (only enabled shown), benefit QR panel when selected, place order → calls RPC
-- `src/routes/store.$slug.thank-you.$orderId.tsx` — order confirmation
+**Storefront checkout:** replace the current flat "Address / City" fields with the six-field group (Label, Region dropdown from `bahrain-regions`, Block, Road, House, Flat-optional). Region uses the existing dropdown from `src/lib/bahrain-regions.ts`.
 
-Existing `src/routes/store.$slug.tsx` becomes the route layout (renamed to `.route.tsx`).
+**Invoice / order voucher:** `download-invoice-pdf.ts`, `thermal-print.ts`, order detail print view, and the public `/invoice/:id` route all render the address via a single helper that outputs the labelled string ("Block: X, Road: Y, House: Z, Flat: W, Region: …"), so admin, thermal receipt, PDF, and shopper's thank-you page all match.
 
-**Client features**
-- `useStorefront()` context: brand, settings, cart (localStorage-persisted per brand slug), lang (ar/en with localStorage), currency
-- Header: brand logo + name (lang-based), language toggle (العربية/English) that sets `document.documentElement.dir` and `lang`, cart icon with count
-- All copy via inline `t()` helper in a small `src/lib/storefront-i18n.ts` (masculine Arabic)
-- Brand primary color applied via CSS variable at layout root
-- Framer-motion smooth transitions; skeleton loading states
-- Mobile-first: sticky bottom "Add to cart" on product page, drawer cart
+## 3. Storefront Customer Auth + Fulfillment Method + Delivery Fee
 
-**Realtime**
-- In the layout, subscribe to `products`, `product_variants` for this `brand_id` → `queryClient.invalidateQueries(['storefront', slug, ...])`
-- Clean teardown in `useEffect`
+**Storefront auth (`/store/$slug/auth`):**
+- Email + password sign-up / sign-in using the standard Supabase client — same table the admin portal uses, so accounts unify.
+- On successful sign-up a client-side call to a new `link_storefront_customer` RPC creates (or links) a `customers` row for that `brand_id` where `email` matches and stores the new `auth_user_id` column on that row.
+- Checkout header shows "Sign in / Sign up" when logged out and the customer's name when logged in. Guest checkout stays supported; if a logged-in user checks out we skip the name/phone/email fields and pull them from the profile.
+- New column `customers.auth_user_id uuid` (nullable, indexed). RLS: keep existing "brand access" for staff; add a policy `TO authenticated USING (auth_user_id = auth.uid())` so shoppers can read their own record across brands.
 
-## 3. Brand Admin: Payment Settings
+**Fulfillment method:**
+- Add `orders.fulfillment_method text NOT NULL DEFAULT 'delivery'` (check `'delivery' | 'pickup'`).
+- Storefront checkout: prominent two-tile selector (توصيل / استلام من الفرع) above the payment method.
+- Order summary: adds a "Delivery fee" line when `delivery`; hides it (or shows "Pickup — free") when `pickup`.
 
-Add a new "إعدادات الدفع / Payment Settings" card in `src/routes/_authenticated/b.$slug.settings.tsx`:
-- Three switches: COD, Card, Benefit Pay
-- Benefit QR image upload (uses existing `uploadToBucket` helper, public URL)
-- Preview of QR
+**Delivery fee (per brand):**
+- `business_settings.delivery_fee numeric(10,2) NOT NULL DEFAULT 0`.
+- Brand admin `/b/$slug/settings` gets a new card **Shipping** with a delivery-fee numeric input, saved through the existing settings save action.
+- `place_storefront_order` RPC now reads `delivery_fee` from `business_settings` and writes `shipping = delivery_fee` on the order when method = delivery, `shipping = 0` when pickup; totals are recomputed accordingly.
+- Column-level anon `GRANT SELECT (delivery_fee, fulfillment_pickup_enabled)` and `brand_public_settings` view is updated so the storefront can display the fee before checkout.
 
-Add hero media & product media upload UI:
-- Brand settings: hero image/video upload → `brands.hero_media`
-- Inventory product form (`b.$slug.inventory.tsx`): add multi-media uploader writing to `products.media` (images + optional short mp4 clips). Toggle `is_active`.
+## 4. Global UI Contrast Audit
 
-## 4. Real-time in admin dashboards
+Fix in `src/styles.css`:
+- Bump `--muted-foreground` in light mode from `oklch(0.5 0.02 25)` → `oklch(0.42 0.02 25)` (AA on white).
+- Bump `--muted-foreground` in dark mode from `oklch(0.72 0.02 70)` → `oklch(0.82 0.02 70)`.
+- Force `input, textarea, select { color: var(--color-foreground); background-color: var(--color-background); }` and `::placeholder { color: var(--color-muted-foreground); opacity: 1; }` in `@layer base` so shadcn inputs never render foreground=background in any theme.
+- Add `[data-slot="select-value"], [data-radix-select-value] { color: inherit; }` fallback to fix invisible dropdown text on the Radix Select trigger.
+- Table cells: ensure `<th>`/`<td>` inherit `--color-foreground` (the shadcn `<table>` primitive is fine; the storefront's ad-hoc tables get a `text-foreground` utility on their `<tbody>`).
+- Storefront: the `text_color` / `background_color` inline styles on the store shell will only apply to the shell wrapper; inputs and cards inside `<main>` will use design tokens (not the raw brand colors) so shopper input text stays readable regardless of the brand palette.
 
-Add realtime subscriptions in:
-- `b.$slug.orders.index.tsx` → invalidate on new orders (already listing brand orders)
-- `b.$slug.customers.tsx` → invalidate on new customers
-- `b.$slug.inventory.tsx` → invalidate on variant stock changes
+## 5. Developer Integrations Tab (placeholder)
 
-## 5. Global Arabic copy pass — feminine → masculine/neutral
+- New route `src/routes/_authenticated/b.$slug.integrations.tsx` linked from the brand sidebar (label: "ربط المطورين / Developer integrations").
+- New table `integration_credentials` (`id, brand_id, provider text, base_url text, api_key text, webhook_secret text, is_active bool, notes text`) — RLS gated to `is_admin() AND can_access_brand(brand_id)`; keys are stored as text for now with a UI warning that production wiring is pending. Values are masked in the list (`sk_live_••••1234`) and revealed with a "Show" toggle.
+- UI: header + short explainer, a "New integration" dialog (provider dropdown seeded with Aramex, Posta Plus, Stripe, Tap, Custom, plus free-text), list of saved credentials with edit/delete, and a copy-to-clipboard for the brand's webhook target URL (`https://…/api/public/webhooks/<provider>/<brand_id>`). No actual outbound calls yet — this ships the schema + UI plumbing only.
 
-Sweep `src/lib/i18n.tsx` and any inline `ar:` strings across the app. Examples:
-- "أضيفي" → "أضف"
-- "سجّلي" → "سجّل"
-- "مشترياتكِ" → "مشترياتك"
-- "أهلاً بكِ" → "أهلاً بك"
-- "قومي بـ" → "قم بـ"
-- All verb endings, pronoun suffixes normalized.
+## Technical notes
 
-Do this in a single file diff on `src/lib/i18n.tsx` and grep the routes for remaining feminine forms.
+- Migration in a single file: adds `block` to customers + customer_addresses, `delivery_fee` to business_settings, `fulfillment_method` to orders, `auth_user_id` to customers, creates `integration_credentials`, updates `place_storefront_order` + `brand_public_settings` view, adds `delete_brand` and `link_storefront_customer` RPCs. Every new/altered public table gets the required GRANT block before RLS/policies.
+- Files touched: `src/routes/_authenticated/brands.tsx` (edit/delete), `src/routes/_authenticated/b.$slug.settings.tsx` (shipping + delivery fee card), `src/routes/_authenticated/b.$slug.route.tsx` (sidebar link), new `b.$slug.integrations.tsx`, `src/routes/_authenticated/b.$slug.orders.$id.tsx` (Block field in address form, fulfillment method badge), `src/routes/store.$slug.checkout.tsx` (auth handoff, six-field address, fulfillment selector, delivery fee), new `src/routes/store.$slug.auth.tsx`, `src/lib/storefront-context.tsx` (session + delivery_fee in settings), `src/lib/bahrain-regions.ts` (labelled formatter with Block), `src/lib/download-invoice-pdf.ts` + `src/lib/thermal-print.ts` + `src/routes/invoice.$id.tsx` (labelled address rendering), `src/styles.css` (contrast fixes).
 
-## 6. Technical notes
+## Out of scope for this pass
 
-- Storefront queries use browser `supabase` client (anon key) — RLS + anon policies enforce safety
-- Order placement uses `supabase.rpc('place_storefront_order', {...})` (no auth required)
-- Videos: `<video autoPlay muted loop playsInline>` for hero; `<video controls playsInline>` in product gallery
-- Media gallery component: shared between hero and product page, keyboard/swipe navigation
-- Cart persists in `localStorage` keyed by `cart:${brandSlug}`
-- Empty/loading/error states everywhere; toast on order success then redirect
-
-## Out of scope (confirm if needed)
-- Real card payment processor integration (Stripe/Tap/etc.) — "Card Payment" will collect intent and mark order pending manual processing unless you want a specific gateway
-- Customer login/accounts on storefront (guest checkout only)
-- Search / discount codes
-
-Approve to build.
+- Real shipping-carrier API calls (Aramex/Posta Plus wiring beyond storing credentials).
+- Real card processing (Stripe/Tap) — the UI stays as-is; only credential storage is added.
+- Encryption-at-rest for API keys (would need Vault / server-side crypto; flagged in the Integrations UI).
