@@ -170,10 +170,10 @@ function Checkout() {
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 grid md:grid-cols-[1fr_360px] gap-6">
       <div className="space-y-4">
         {!session && (
-          <Card className="p-4 flex items-center justify-between gap-3 border-primary/30 bg-primary/5">
-            <div className="flex items-center gap-3 min-w-0">
+          <Card className="p-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-primary/30 bg-primary/5">
+            <div className="flex min-w-0 items-center gap-3">
               <User className="h-5 w-5 shrink-0" />
-              <p className="text-sm truncate">{t("لديك حساب؟ سجّل الدخول لملء البيانات تلقائيًا.", "Have an account? Sign in to prefill your details.")}</p>
+              <p className="text-sm min-w-0 break-words">{t("لديك حساب؟ سجّل الدخول لملء البيانات تلقائيًا.", "Have an account? Sign in to prefill your details.")}</p>
             </div>
             <Button asChild size="sm" variant="outline" className="shrink-0">
               <Link to="/store/$slug/auth" params={{ slug: brand.slug }}>{t("سجّل الدخول", "Sign in")}</Link>
