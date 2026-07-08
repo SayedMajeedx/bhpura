@@ -400,7 +400,8 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
                   </button>
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
 
