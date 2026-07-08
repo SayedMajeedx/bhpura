@@ -35,6 +35,7 @@ import { Route as StoreSlugProductIdRouteImport } from './routes/store.$slug.pro
 import { Route as StoreSlugPageIdxRouteImport } from './routes/store.$slug.page.$idx'
 import { Route as AuthenticatedBSlugTeamRouteImport } from './routes/_authenticated/b.$slug.team'
 import { Route as AuthenticatedBSlugSettingsRouteImport } from './routes/_authenticated/b.$slug.settings'
+import { Route as AuthenticatedBSlugPagesRouteImport } from './routes/_authenticated/b.$slug.pages'
 import { Route as AuthenticatedBSlugInventoryRouteImport } from './routes/_authenticated/b.$slug.inventory'
 import { Route as AuthenticatedBSlugIntegrationsRouteImport } from './routes/_authenticated/b.$slug.integrations'
 import { Route as AuthenticatedBSlugExpensesRouteImport } from './routes/_authenticated/b.$slug.expenses'
@@ -176,6 +177,11 @@ const AuthenticatedBSlugSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedBSlugRouteRoute,
   } as any)
+const AuthenticatedBSlugPagesRoute = AuthenticatedBSlugPagesRouteImport.update({
+  id: '/pages',
+  path: '/pages',
+  getParentRoute: () => AuthenticatedBSlugRouteRoute,
+} as any)
 const AuthenticatedBSlugInventoryRoute =
   AuthenticatedBSlugInventoryRouteImport.update({
     id: '/inventory',
@@ -259,6 +265,7 @@ export interface FileRoutesByFullPath {
   '/b/$slug/expenses': typeof AuthenticatedBSlugExpensesRoute
   '/b/$slug/integrations': typeof AuthenticatedBSlugIntegrationsRoute
   '/b/$slug/inventory': typeof AuthenticatedBSlugInventoryRoute
+  '/b/$slug/pages': typeof AuthenticatedBSlugPagesRoute
   '/b/$slug/settings': typeof AuthenticatedBSlugSettingsRoute
   '/b/$slug/team': typeof AuthenticatedBSlugTeamRoute
   '/store/$slug/page/$idx': typeof StoreSlugPageIdxRoute
@@ -294,6 +301,7 @@ export interface FileRoutesByTo {
   '/b/$slug/expenses': typeof AuthenticatedBSlugExpensesRoute
   '/b/$slug/integrations': typeof AuthenticatedBSlugIntegrationsRoute
   '/b/$slug/inventory': typeof AuthenticatedBSlugInventoryRoute
+  '/b/$slug/pages': typeof AuthenticatedBSlugPagesRoute
   '/b/$slug/settings': typeof AuthenticatedBSlugSettingsRoute
   '/b/$slug/team': typeof AuthenticatedBSlugTeamRoute
   '/store/$slug/page/$idx': typeof StoreSlugPageIdxRoute
@@ -332,6 +340,7 @@ export interface FileRoutesById {
   '/_authenticated/b/$slug/expenses': typeof AuthenticatedBSlugExpensesRoute
   '/_authenticated/b/$slug/integrations': typeof AuthenticatedBSlugIntegrationsRoute
   '/_authenticated/b/$slug/inventory': typeof AuthenticatedBSlugInventoryRoute
+  '/_authenticated/b/$slug/pages': typeof AuthenticatedBSlugPagesRoute
   '/_authenticated/b/$slug/settings': typeof AuthenticatedBSlugSettingsRoute
   '/_authenticated/b/$slug/team': typeof AuthenticatedBSlugTeamRoute
   '/store/$slug/page/$idx': typeof StoreSlugPageIdxRoute
@@ -370,6 +379,7 @@ export interface FileRouteTypes {
     | '/b/$slug/expenses'
     | '/b/$slug/integrations'
     | '/b/$slug/inventory'
+    | '/b/$slug/pages'
     | '/b/$slug/settings'
     | '/b/$slug/team'
     | '/store/$slug/page/$idx'
@@ -405,6 +415,7 @@ export interface FileRouteTypes {
     | '/b/$slug/expenses'
     | '/b/$slug/integrations'
     | '/b/$slug/inventory'
+    | '/b/$slug/pages'
     | '/b/$slug/settings'
     | '/b/$slug/team'
     | '/store/$slug/page/$idx'
@@ -442,6 +453,7 @@ export interface FileRouteTypes {
     | '/_authenticated/b/$slug/expenses'
     | '/_authenticated/b/$slug/integrations'
     | '/_authenticated/b/$slug/inventory'
+    | '/_authenticated/b/$slug/pages'
     | '/_authenticated/b/$slug/settings'
     | '/_authenticated/b/$slug/team'
     | '/store/$slug/page/$idx'
@@ -645,6 +657,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBSlugSettingsRouteImport
       parentRoute: typeof AuthenticatedBSlugRouteRoute
     }
+    '/_authenticated/b/$slug/pages': {
+      id: '/_authenticated/b/$slug/pages'
+      path: '/pages'
+      fullPath: '/b/$slug/pages'
+      preLoaderRoute: typeof AuthenticatedBSlugPagesRouteImport
+      parentRoute: typeof AuthenticatedBSlugRouteRoute
+    }
     '/_authenticated/b/$slug/inventory': {
       id: '/_authenticated/b/$slug/inventory'
       path: '/inventory'
@@ -719,6 +738,7 @@ interface AuthenticatedBSlugRouteRouteChildren {
   AuthenticatedBSlugExpensesRoute: typeof AuthenticatedBSlugExpensesRoute
   AuthenticatedBSlugIntegrationsRoute: typeof AuthenticatedBSlugIntegrationsRoute
   AuthenticatedBSlugInventoryRoute: typeof AuthenticatedBSlugInventoryRoute
+  AuthenticatedBSlugPagesRoute: typeof AuthenticatedBSlugPagesRoute
   AuthenticatedBSlugSettingsRoute: typeof AuthenticatedBSlugSettingsRoute
   AuthenticatedBSlugTeamRoute: typeof AuthenticatedBSlugTeamRoute
   AuthenticatedBSlugOrdersIdRoute: typeof AuthenticatedBSlugOrdersIdRoute
@@ -734,6 +754,7 @@ const AuthenticatedBSlugRouteRouteChildren: AuthenticatedBSlugRouteRouteChildren
     AuthenticatedBSlugExpensesRoute: AuthenticatedBSlugExpensesRoute,
     AuthenticatedBSlugIntegrationsRoute: AuthenticatedBSlugIntegrationsRoute,
     AuthenticatedBSlugInventoryRoute: AuthenticatedBSlugInventoryRoute,
+    AuthenticatedBSlugPagesRoute: AuthenticatedBSlugPagesRoute,
     AuthenticatedBSlugSettingsRoute: AuthenticatedBSlugSettingsRoute,
     AuthenticatedBSlugTeamRoute: AuthenticatedBSlugTeamRoute,
     AuthenticatedBSlugOrdersIdRoute: AuthenticatedBSlugOrdersIdRoute,

@@ -68,6 +68,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         items.push({ to: "/b/$slug/team", params: { slug: activeSlug }, label: lang === "ar" ? "إدارة الموظفين" : "Team Management", icon: Shield });
         items.push({ to: "/b/$slug/integrations", params: { slug: activeSlug }, label: t("nav.integrations"), icon: Plug });
       }
+      items.push({ to: "/b/$slug/pages", params: { slug: activeSlug }, label: lang === "ar" ? "الصفحات والسياسات" : "Pages & Policies", icon: FileText });
       items.push({ to: "/b/$slug/settings", params: { slug: activeSlug }, label: t("nav.settings"), icon: Settings });
 
     }
