@@ -10,9 +10,7 @@ type SearchParams = { q: string };
 type ProductRow = {
   id: string;
   name: string;
-  name_ar: string | null;
   description: string | null;
-  description_ar: string | null;
   image_url: string | null;
   product_variants: Array<{ id: string; selling_price: number; stock_main: number }>;
 };
