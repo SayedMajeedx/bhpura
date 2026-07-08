@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
 import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES } from "@/lib/payment-status";
 import { useBrand } from "@/lib/brand-context";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 
 export const Route = createFileRoute("/_authenticated/b/$slug/orders/")({
   component: OrdersList,
@@ -43,6 +44,16 @@ function OrdersList() {
   const { slug } = Route.useParams();
   const brand = useBrand();
   const brandId = brand.id;
+
+  useRealtimeInvalidate(
+    [
+      { table: "orders", brandId, queryKey: ["orders", brandId] },
+      { table: "order_items", brandId, queryKey: ["orders", brandId] },
+    ],
+    `orders-list-${brandId}`,
+  );
+
+
 
 
   const { data } = useQuery({

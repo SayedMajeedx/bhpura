@@ -16,6 +16,8 @@ import { ActivityLogList } from "@/components/activity-log-list";
 import { BarcodeSvg, PrintLabelButton, printLabels, type LabelData } from "@/components/barcode-label";
 import { useProfile } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
+import { Switch } from "@/components/ui/switch";
 
 export const Route = createFileRoute("/_authenticated/b/$slug/inventory")({
   component: Inventory,
@@ -35,6 +37,15 @@ function Inventory() {
   const brand = useBrand();
   const brandId = brand.id;
   const [tab, setTab] = useState<"products" | "customizations">("products");
+
+  useRealtimeInvalidate(
+    [
+      { table: "products", brandId, queryKey: ["products", brandId] },
+      { table: "product_variants", brandId, queryKey: ["variants", brandId] },
+      { table: "customization_options", brandId, queryKey: ["customizations", brandId] },
+    ],
+    `inventory-${brandId}`,
+  );
 
   const products = useQuery({
     queryKey: ["products", brandId],

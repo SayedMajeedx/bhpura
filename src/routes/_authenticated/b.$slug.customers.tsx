@@ -15,6 +15,7 @@ import { useT, useI18n } from "@/lib/i18n";
 import { BAHRAIN_REGIONS, regionLabel, formatAddressLine, type StructuredAddress } from "@/lib/bahrain-regions";
 import { PhoneInput } from "@/components/phone-input";
 import { useBrand } from "@/lib/brand-context";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 
 export const Route = createFileRoute("/_authenticated/b/$slug/customers")({
   component: CustomersPage,
@@ -53,6 +54,14 @@ function CustomersPage() {
   const brandId = brand.id;
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
+
+  useRealtimeInvalidate(
+    [
+      { table: "customers", brandId, queryKey: ["customers", brandId] },
+      { table: "customer_addresses", brandId, queryKey: ["customer_addresses", brandId] },
+    ],
+    `customers-list-${brandId}`,
+  );
 
   const { data } = useQuery({
     queryKey: ["customers", brandId],
