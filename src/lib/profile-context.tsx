@@ -35,6 +35,7 @@ type ProfileContextType = {
   isSuperAdmin: boolean;
   isBrandAdmin: boolean;
   isActive: boolean;
+  profileError: boolean;
   canViewFinancials: boolean;
   refreshProfile: () => Promise<void>;
   signOutAndRedirect: () => Promise<void>;
@@ -43,28 +44,20 @@ type ProfileContextType = {
 
 const ProfileContext = createContext<ProfileContextType | null>(null);
 
-// Fallback profile for users without a profile record (treat as active admin,
-// or super_admin if the email matches the fixed super admin).
-const createFallbackProfile = (userId: string, email: string): Profile => ({
-  id: userId,
-  email,
-  name: null,
-  role: email.toLowerCase() === SUPER_ADMIN_EMAIL ? "super_admin" : "admin",
-  status: "active",
-  brand_id: null,
-  brand: null,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-});
-
+// SECURITY: there is intentionally no "fallback" profile anymore. A user
+// without a resolvable profile row gets `profile = null`, which the rest of
+// this context (and AppShell) treats as "no access" rather than "admin".
+// Failing open here previously meant any hiccup in profile creation silently
+// granted platform-wide admin rights.
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileError, setProfileError] = useState(false);
   const navigate = useNavigate();
 
   // Upsert profile if missing (handles existing users from before RBAC migration)
-  const ensureProfile = useCallback(async (userId: string, email: string): Promise<Profile> => {
+  const ensureProfile = useCallback(async (userId: string, email: string): Promise<Profile | null> => {
     const { data, error } = await supabase
       .from("profiles")
       .select("*, brand:brands(id, slug, name_en, name_ar, logo_url, is_active)")
@@ -73,16 +66,16 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
     if (error) {
       console.error("[ProfileContext] Error fetching profile:", error);
-      return createFallbackProfile(userId, email);
+      setProfileError(true);
+      return null;
     }
 
     if (data) {
       return data as Profile;
     }
 
-
-    // No profile exists - attempt to create one via edge function
-    // Fall back to treating user as active admin if creation fails
+    // No profile exists - attempt to create one via edge function.
+    // If this fails, deny access rather than fail open.
     try {
       const session = await supabase.auth.getSession();
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/user-management?action=ensure-profile`, {
@@ -104,8 +97,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       console.error("[ProfileContext] Error ensuring profile:", err);
     }
 
-    // Return fallback profile - user can still use the app
-    return createFallbackProfile(userId, email);
+    setProfileError(true);
+    return null;
   }, []);
 
   const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
@@ -169,10 +162,12 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
   // Defensive: the fixed super admin is always treated as such client-side too.
   const emailIsSuperAdmin = profile?.email?.toLowerCase() === SUPER_ADMIN_EMAIL;
-  const isSuperAdmin = (profile?.role === "super_admin" || emailIsSuperAdmin) && (profile?.status ?? "active") === "active";
-  const isBrandAdmin = profile?.role === "brand_admin" && (profile?.status ?? "active") === "active";
-  const isAdmin = profile?.role === "admin" || isBrandAdmin || isSuperAdmin;
-  const isActive = !profile || profile.status === "active";
+  // SECURITY: all of these now require a resolved profile row with status
+  // "active". A null profile (couldn't be found or created) grants nothing.
+  const isActive = profile?.status === "active";
+  const isSuperAdmin = isActive && (profile?.role === "super_admin" || emailIsSuperAdmin);
+  const isBrandAdmin = isActive && profile?.role === "brand_admin";
+  const isAdmin = isActive && (profile?.role === "admin" || isBrandAdmin || isSuperAdmin);
   // Only admins (incl. super admin, brand admin) can view financial data
   const canViewFinancials = isAdmin && isActive;
 
@@ -185,6 +180,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         isSuperAdmin,
         isBrandAdmin,
         isActive,
+        profileError,
         canViewFinancials,
         refreshProfile,
         signOutAndRedirect,

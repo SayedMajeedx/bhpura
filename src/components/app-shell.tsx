@@ -17,7 +17,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { t, lang, setLang } = useI18n();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { profile, isAdmin, isSuperAdmin, isLoading, signOutAndRedirect } = useProfile();
+  const { profile, isAdmin, isSuperAdmin, isLoading, profileError, signOutAndRedirect } = useProfile();
 
   // Extract slug from current URL when inside /b/:slug/*
   const routeParams = useParams({ strict: false }) as { slug?: string };
@@ -164,6 +164,34 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
     </>
   );
+
+  // SECURITY: fail closed. If we're done loading and still have no profile,
+  // the account has no confirmed role/brand — don't render the admin shell
+  // or any of its data-fetching children.
+  if (!isLoading && !profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="max-w-sm text-center space-y-3">
+          <h1 className="text-xl font-display text-primary">
+            {lang === "ar" ? "الحساب بانتظار الإعداد" : "Account pending setup"}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {lang === "ar"
+              ? "لم يتم العثور على صلاحيات لحسابك بعد. يرجى التواصل مع المسؤول العام لإعداد حسابك."
+              : "We couldn't confirm your access role yet. Please contact the super admin to finish setting up your account."}
+          </p>
+          {profileError && (
+            <p className="text-xs text-muted-foreground/70">
+              {lang === "ar" ? "حدث خطأ أثناء التحقق." : "There was an error verifying your account."}
+            </p>
+          )}
+          <Button variant="outline" onClick={signOut}>
+            <LogOut className="h-4 w-4 mr-2" /> {t("nav.signOut")}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex bg-background">

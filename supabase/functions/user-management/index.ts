@@ -59,29 +59,38 @@ Deno.serve(async (req: Request) => {
       return await handleEnsureProfile(supabase, user.id, body.email || user.email);
     }
 
-    // All other actions require admin role
-    const { data: callerProfile } = await supabase
+    // All other actions require admin role.
+    // SECURITY: fail closed. A missing profile (lookup error, race condition,
+    // not-yet-provisioned account, etc.) must NOT be treated as admin access.
+    const { data: callerProfile, error: callerProfileError } = await supabase
       .from("profiles")
       .select("role, status, email, brand_id")
       .eq("id", user.id)
       .maybeSingle();
 
-    const callerRole: string = callerProfile?.role || "admin";
-    const isAdmin = callerRole === "admin" || callerRole === "super_admin" || callerRole === "brand_admin";
-    const isSuperAdmin = callerRole === "super_admin" ||
-      (callerProfile?.email || "").toLowerCase() === "majeed@hotmail.it";
-    const isActive = !callerProfile || callerProfile.status === "active";
-
-    if (!isAdmin) {
+    if (callerProfileError || !callerProfile) {
       return new Response(
-        JSON.stringify({ error: "Forbidden: admin role required" }),
+        JSON.stringify({ error: "Forbidden: no profile found for this account" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    const callerRole: string = callerProfile.role;
+    const isAdmin = callerRole === "admin" || callerRole === "super_admin" || callerRole === "brand_admin";
+    const isSuperAdmin = callerRole === "super_admin" ||
+      callerProfile.email.toLowerCase() === "majeed@hotmail.it";
+    const isActive = callerProfile.status === "active";
+
     if (!isActive) {
       return new Response(
         JSON.stringify({ error: "Forbidden: account inactive or suspended" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!isAdmin) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: admin role required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
