@@ -8,8 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Trash2, Printer, Save, Send, Search, Star, Receipt, Link as LinkIcon, ScanLine, Mail, MailCheck, MailWarning } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { ArrowLeft, Plus, Trash2, Printer, Save, Send, Search, Star, Receipt, Link as LinkIcon, ScanLine, Mail } from "lucide-react";import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
@@ -576,13 +575,7 @@ function OrderDetail() {
                 : undefined
             }
           >
-            {order?.confirmation_email_status === "sent" ? (
-              <MailCheck className="h-4 w-4 mr-2 text-green-600" />
-            ) : order?.confirmation_email_status === "failed" ? (
-              <MailWarning className="h-4 w-4 mr-2 text-destructive" />
-            ) : (
-              <Mail className="h-4 w-4 mr-2" />
-            )}
+            <Mail className={`h-4 w-4 mr-2 ${order?.confirmation_email_status === "sent" ? "text-green-600" : order?.confirmation_email_status === "failed" ? "text-destructive" : ""}`} />
             {order?.confirmation_email_status === "sent"
               ? (lang === "ar" ? "إعادة إرسال التأكيد" : "Resend confirmation")
               : (lang === "ar" ? "إرسال بريد التأكيد" : "Send confirmation email")}
